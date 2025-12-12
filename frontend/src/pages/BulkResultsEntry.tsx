@@ -54,7 +54,7 @@ export default function BulkResultsEntry() {
       await Promise.all(
         students.map(async (student: any) => {
           try {
-            const studentResults = await resultsApi.getByStudent(student.id, { term, year });
+            const studentResults = await resultsApi.getByStudent(student.id, { term, year: year.toString() });
             const subjectResult = studentResults.find((r: any) => r.subject_id === selectedSubject);
             if (subjectResult) {
               results[student.id] = subjectResult;
@@ -126,7 +126,7 @@ export default function BulkResultsEntry() {
           student_id: studentId,
           subject_id: selectedSubject,
           term,
-          year,
+          year: year.toString(),
           final_grade: calculateGrade(total),
           raw_marks: { ca, exam, total },
         });

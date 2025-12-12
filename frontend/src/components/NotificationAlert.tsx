@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { auditApi } from '@/services/api';
 
@@ -106,8 +106,8 @@ export default function NotificationAlert() {
             <div className="max-h-80 overflow-y-auto scrollbar-hide">
               {activities?.length > 0 ? (
                 <div className="divide-y divide-gray-100">
-                  {activities.map((activity: Activity, index: number) => {
-                    const isNew = newActivities.some(na => na.id === activity.id);
+                  {activities.map((activity: Activity) => {
+                    const isNew = newActivities.some((na: Activity) => na.id === activity.id);
                     return (
                       <div
                         key={activity.id}
@@ -135,9 +135,9 @@ export default function NotificationAlert() {
                             </div>
                             
                             {/* What was affected */}
-                            {(activity.after?.name || activity.before?.name) && (
+                            {activity.after?.name && (
                               <p className="text-gray-700 text-xs font-medium truncate">
-                                📝 {activity.after?.name || activity.before?.name}
+                                📝 {activity.after.name}
                               </p>
                             )}
                             
