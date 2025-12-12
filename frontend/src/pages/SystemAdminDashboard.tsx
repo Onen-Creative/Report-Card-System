@@ -254,7 +254,7 @@ export default function SystemAdminDashboard() {
               <p className="text-3xl font-bold text-blue-600">{stats.total_schools}</p>
               <div className="mt-3 space-y-1">
                 {Object.entries(stats.schools_by_type).map(([type, count]) => (
-                  <p key={type} className="text-sm text-gray-600">{type}: {count}</p>
+                  <p key={type} className="text-sm text-gray-600">{type}: {String(count)}</p>
                 ))}
               </div>
             </div>
@@ -263,7 +263,7 @@ export default function SystemAdminDashboard() {
               <p className="text-3xl font-bold text-green-600">{stats.total_users}</p>
               <div className="mt-3 space-y-1">
                 {Object.entries(stats.users_by_role).map(([role, count]) => (
-                  <p key={role} className="text-sm text-gray-600">{role.replace('_', ' ')}: {count}</p>
+                  <p key={role} className="text-sm text-gray-600">{role.replace('_', ' ')}: {String(count)}</p>
                 ))}
               </div>
             </div>
@@ -420,8 +420,8 @@ export default function SystemAdminDashboard() {
                     <div className="space-y-2">
                       {stats.users_by_school?.map((item: any, index: number) => (
                         <div key={index} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
-                          <span className="text-gray-700 text-sm">{item.school_name}</span>
-                          <span className="font-semibold text-blue-600">{item.user_count}</span>
+                          <span className="text-gray-700 text-sm">{item.school_name ?? ''}</span>
+                          <span className="font-semibold text-blue-600">{item.user_count ?? ''}</span>
                         </div>
                       ))}
                     </div>
@@ -433,8 +433,8 @@ export default function SystemAdminDashboard() {
                     <div className="space-y-2">
                       {stats.students_by_school?.map((item: any, index: number) => (
                         <div key={index} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
-                          <span className="text-gray-700 text-sm">{item.school_name}</span>
-                          <span className="font-semibold text-purple-600">{item.student_count}</span>
+                          <span className="text-gray-700 text-sm">{item.school_name ?? ''}</span>
+                          <span className="font-semibold text-purple-600">{item.student_count ?? ''}</span>
                         </div>
                       ))}
                     </div>

@@ -11,7 +11,7 @@ export default function ReportCard({ students }: ReportCardProps) {
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [selectedClass, setSelectedClass] = useState<string>('all');
   const [term, setTerm] = useState('Term1');
-  const [year, setYear] = useState(2025);
+  const [year, setYear] = useState('2025');
   const [school, setSchool] = useState<any>(null);
   const [printMode, setPrintMode] = useState<'single' | 'bulk'>('single');
   const [nextTermBegins, setNextTermBegins] = useState('');
@@ -32,16 +32,6 @@ export default function ReportCard({ students }: ReportCardProps) {
       setSchool(user.school);
     }
   }, []);
-
-  const handlePrint = () => {
-    setPrintMode('single');
-    setTimeout(() => window.print(), 100);
-  };
-
-  const handlePrintBulk = () => {
-    setPrintMode('bulk');
-    setTimeout(() => window.print(), 100);
-  };
 
   const exportMarksToExcel = async () => {
     const classStudents = selectedClass === 'all' ? students : filteredStudents;
@@ -70,7 +60,7 @@ export default function ReportCard({ students }: ReportCardProps) {
         const total = results?.reduce((sum: number, r: any) => sum + (r.raw_marks?.total || 0), 0) || 0;
         const average = results?.length > 0 ? (total / results.length).toFixed(1) : '0';
         
-        studentRow['Total Marks'] = total;
+        studentRow['Total Marks'] = total.toString();
         studentRow['Average'] = average;
         
         marksData.push(studentRow);
@@ -104,8 +94,8 @@ export default function ReportCard({ students }: ReportCardProps) {
         removeContainer: true,
         imageTimeout: 0,
         logging: false,
-        width: 210 * 3.78,
-        height: 297 * 3.78
+        width: Math.round(210 * 3.78),
+        height: Math.round(297 * 3.78)
       });
       
       const imgData = canvas.toDataURL('image/png', 1.0);
@@ -286,7 +276,7 @@ export default function ReportCard({ students }: ReportCardProps) {
                   <input 
                     type="number" 
                     value={year} 
-                    onChange={(e) => setYear(Number(e.target.value))} 
+                    onChange={(e) => setYear(e.target.value)} 
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white" 
                   />
                 </div>
@@ -372,7 +362,15 @@ export default function ReportCard({ students }: ReportCardProps) {
   );
 }
 
-function ReportCardTemplate({ student, term, year, school, nextTermBegins, nextTermEnds, pageBreak }: any) {
+function ReportCardTemplate({ student, term, year, school, nextTermBegins, nextTermEnds, pageBreak }: {
+  student: any;
+  term: string;
+  year: string;
+  school: any;
+  nextTermBegins: string;
+  nextTermEnds: string;
+  pageBreak?: boolean;
+}) {
   const { data: results } = useQuery({
     queryKey: ['results', student?.id, term, year],
     queryFn: () => resultsApi.getByStudent(student.id, { term, year }),
@@ -385,10 +383,8 @@ function ReportCardTemplate({ student, term, year, school, nextTermBegins, nextT
     enabled: !!student,
   });
 
-
-
   const calculateStats = () => {
-    if (!results || results.length === 0) return { total: 0, average: 0 };
+    if (!results || results.length === 0) return { total: '0', average: '0' };
     const total = results.reduce((sum: number, r: any) => sum + (r.raw_marks?.total || 0), 0);
     const average = total / results.length;
     return { total: total.toFixed(1), average: average.toFixed(1) };
@@ -501,20 +497,20 @@ function ReportCardTemplate({ student, term, year, school, nextTermBegins, nextT
         <div className="border border-black p-2">
           <p className="font-bold text-xs mb-1">CLASS TEACHER'S COMMENT:</p>
           <p className="text-xs min-h-[20px]">
-            {parseFloat(stats.average) >= 80 ? 'Excellent performance! Keep up the outstanding work.' :
-             parseFloat(stats.average) >= 65 ? 'Very good performance. Continue working hard.' :
-             parseFloat(stats.average) >= 50 ? 'Good effort. There is room for improvement.' :
-             parseFloat(stats.average) >= 35 ? 'Fair performance. More effort is needed.' :
+            {parseFloat(stats.average.toString()) >= 80 ? 'Excellent performance! Keep up the outstanding work.' :
+             parseFloat(stats.average.toString()) >= 65 ? 'Very good performance. Continue working hard.' :
+             parseFloat(stats.average.toString()) >= 50 ? 'Good effort. There is room for improvement.' :
+             parseFloat(stats.average.toString()) >= 35 ? 'Fair performance. More effort is needed.' :
              'Needs significant improvement. Extra support recommended.'}
           </p>
         </div>
         <div className="border border-black p-2">
           <p className="font-bold text-xs mb-1">HEADTEACHER'S COMMENT:</p>
           <p className="text-xs min-h-[20px]">
-            {parseFloat(stats.average) >= 80 ? 'Outstanding achievement! Exemplary student.' :
-             parseFloat(stats.average) >= 65 ? 'Commendable performance. Well done!' :
-             parseFloat(stats.average) >= 50 ? 'Satisfactory progress. Keep improving.' :
-             parseFloat(stats.average) >= 35 ? 'Requires more dedication and focus.' :
+            {parseFloat(stats.average.toString()) >= 80 ? 'Outstanding achievement! Exemplary student.' :
+             parseFloat(stats.average.toString()) >= 65 ? 'Commendable performance. Well done!' :
+             parseFloat(stats.average.toString()) >= 50 ? 'Satisfactory progress. Keep improving.' :
+             parseFloat(stats.average.toString()) >= 35 ? 'Requires more dedication and focus.' :
              'Immediate intervention required. Arrange parent meeting.'}
           </p>
         </div>

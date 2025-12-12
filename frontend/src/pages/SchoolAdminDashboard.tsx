@@ -82,12 +82,7 @@ export default function SchoolAdminDashboard() {
     );
   };
 
-  const generateAdmissionNo = (classId: string, year: string) => {
-    const selectedClassData = classes?.find((c: any) => c.id === classId);
-    const classCode = selectedClassData?.level?.replace(/\s/g, '') || 'CLS';
-    const studentCount = (students?.length || 0) + 1;
-    return `SCH/${classCode}/${year}/${String(studentCount).padStart(3, '0')}`;
-  };
+
 
   const handleStudentSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
