@@ -6,7 +6,7 @@ Production-ready system for Ugandan schools (ECCE → S6) with UNEB/NCDC grading
 
 - Go 1.21+
 - Node.js 18+
-- MySQL 8.0+
+- PostgreSQL 14+
 - Redis 7+
 - MinIO (or S3-compatible storage)
 
@@ -14,12 +14,12 @@ Production-ready system for Ugandan schools (ECCE → S6) with UNEB/NCDC grading
 
 ```bash
 # 1. Install MySQL, Redis, and MinIO locally
-# MySQL: https://dev.mysql.com/downloads/mysql/
+# PostgreSQL: https://www.postgresql.org/download/
 # Redis: https://redis.io/download
 # MinIO: https://min.io/download
 
 # 2. Create database
-mysql -u root -p -e "CREATE DATABASE school_system;"
+psql -U postgres -c "CREATE DATABASE school_system;"
 
 # 3. Configure backend/.env with your database credentials
 
@@ -34,7 +34,7 @@ go run cmd/api/main.go seed-admin
 ./setup-standard-subjects.sh
 
 # 7. Load sample data (optional)
-mysql -u root -p school_system < ../seed/sample_data.sql
+psql -U postgres -d school_system -f ../seed/sample_data.sql
 ```
 
 ## Access
