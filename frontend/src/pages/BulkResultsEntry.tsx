@@ -54,7 +54,7 @@ export default function BulkResultsEntry() {
       await Promise.all(
         students.map(async (student: any) => {
           try {
-            const studentResults = await resultsApi.getByStudent(student.id, { term, year: year });
+            const studentResults = await resultsApi.getByStudent(student.id, { term, year: year.toString() });
             const subjectResult = studentResults.find((r: any) => r.subject_id === selectedSubject);
             if (subjectResult) {
               results[student.id] = subjectResult;
