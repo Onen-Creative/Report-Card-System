@@ -440,7 +440,7 @@ function ReportCardTemplate({ student, term, year, school, nextTermBegins, nextT
           {subjects?.map((subject: any) => {
             const result = results?.find((r: any) => r.subject_id === subject.id);
             const total = result?.raw_marks?.total || 0;
-            const grade = result?.final_grade || '-';
+            const grade = (result?.final_grade || '-').trim();
             const remark = 
               grade === 'A' ? 'Excellent' :
               grade === 'B' ? 'Very Good' :
@@ -449,7 +449,7 @@ function ReportCardTemplate({ student, term, year, school, nextTermBegins, nextT
               grade === 'E' ? 'Needs Improvement' : 'No Grade';
             
             // Debug logging
-            console.log(`Subject: ${subject.name}, Grade: ${grade}, Remark: ${remark}`);
+            console.log(`Subject: ${subject.name}, Grade: '${grade}', Remark: ${remark}`);
             
             // Always show remark, even if 'No Grade'
             return (
