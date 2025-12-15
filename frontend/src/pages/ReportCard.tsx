@@ -446,8 +446,12 @@ function ReportCardTemplate({ student, term, year, school, nextTermBegins, nextT
               grade === 'B' ? 'Very Good' :
               grade === 'C' ? 'Good' :
               grade === 'D' ? 'Fair' :
-              grade === 'E' ? 'Needs Improvement' : '-';
+              grade === 'E' ? 'Needs Improvement' : 'No Grade';
             
+            // Debug logging
+            console.log(`Subject: ${subject.name}, Grade: ${grade}, Remark: ${remark}`);
+            
+            // Always show remark, even if 'No Grade'
             return (
               <tr key={subject.id}>
                 <td className="border border-black px-2 py-1 font-bold text-sm">{subject.name}</td>
@@ -455,7 +459,7 @@ function ReportCardTemplate({ student, term, year, school, nextTermBegins, nextT
                 <td className="border border-black px-1 py-1 text-center">{result?.raw_marks?.exam || ''}</td>
                 <td className="border border-black px-1 py-1 text-center font-bold">{total || ''}</td>
                 <td className="border border-black px-1 py-1 text-center font-bold">{grade !== '-' ? grade : ''}</td>
-                <td className="border border-black px-2 py-1 text-xs">{remark !== '-' ? remark : ''}</td>
+                <td className="border border-black px-2 py-1 text-xs font-bold">{remark}</td>
               </tr>
             );
           })}
