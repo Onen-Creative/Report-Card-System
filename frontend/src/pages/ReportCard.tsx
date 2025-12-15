@@ -440,13 +440,15 @@ function ReportCardTemplate({ student, term, year, school, nextTermBegins, nextT
           {subjects?.map((subject: any) => {
             const result = results?.find((r: any) => r.subject_id === subject.id);
             const total = result?.raw_marks?.total || 0;
-            const grade = (result?.final_grade || '-').trim();
-            const remark = 
+            const hasMarks = result && (result.raw_marks?.ca || result.raw_marks?.exam || result.raw_marks?.total);
+            const grade = hasMarks ? (result?.final_grade || '').trim() : '';
+            const remark = hasMarks ? (
               grade === 'A' ? 'Excellent' :
               grade === 'B' ? 'Very Good' :
               grade === 'C' ? 'Good' :
               grade === 'D' ? 'Fair' :
-              grade === 'E' ? 'Needs Improvement' : 'No Grade';
+              grade === 'E' ? 'Needs Improvement' : ''
+            ) : '';
             
             // Debug logging
             console.log(`Subject: ${subject.name}, Grade: '${grade}', Remark: ${remark}`);
@@ -458,7 +460,7 @@ function ReportCardTemplate({ student, term, year, school, nextTermBegins, nextT
                 <td className="border border-black px-1 py-1 text-center">{result?.raw_marks?.ca || ''}</td>
                 <td className="border border-black px-1 py-1 text-center">{result?.raw_marks?.exam || ''}</td>
                 <td className="border border-black px-1 py-1 text-center font-bold">{total || ''}</td>
-                <td className="border border-black px-1 py-1 text-center font-bold">{grade !== '-' ? grade : ''}</td>
+                <td className="border border-black px-1 py-1 text-center font-bold">{grade}</td>
                 <td className="border border-black px-2 py-1 text-xs font-bold">{remark}</td>
               </tr>
             );
