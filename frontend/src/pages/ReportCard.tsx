@@ -433,7 +433,7 @@ function ReportCardTemplate({ student, term, year, school, nextTermBegins, nextT
             <th className="border border-black px-1 py-2 font-bold w-12">EXAM/80</th>
             <th className="border border-black px-1 py-2 font-bold w-12">TOTAL</th>
             <th className="border border-black px-1 py-2 font-bold w-10">GRADE</th>
-            <th className="border border-black px-2 py-2 font-bold">REMARKS</th>
+            <th className="border border-black px-2 py-2 font-bold w-20">REMARKS</th>
           </tr>
         </thead>
         <tbody>
@@ -455,7 +455,7 @@ function ReportCardTemplate({ student, term, year, school, nextTermBegins, nextT
                 <td className="border border-black px-1 py-1 text-center">{result?.raw_marks?.exam || ''}</td>
                 <td className="border border-black px-1 py-1 text-center font-bold">{total || ''}</td>
                 <td className="border border-black px-1 py-1 text-center font-bold">{grade !== '-' ? grade : ''}</td>
-                <td className="border border-black px-2 py-1">{remark !== '-' ? remark : ''}</td>
+                <td className="border border-black px-2 py-1 text-xs">{remark !== '-' ? remark : ''}</td>
               </tr>
             );
           })}
