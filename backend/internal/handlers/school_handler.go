@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -372,15 +373,31 @@ func (h *SchoolHandler) GetSchoolSummary(c *gin.Context) {
 	h.db.Model(&models.Staff{}).Where("school_id = ? AND role = ? AND status = ?", schoolID, "Teacher", "active").Count(&summary.TotalTeachers)
 
 	// Attendance rate for the specific term/year
+	// If querying for today specifically, only count today's attendance
+	period := c.Query("period")
 	var totalAttendance, presentCount int64
-	h.db.Model(&models.Attendance{}).
-		Where("school_id = ? AND term = ? AND year = ?", schoolID, term, yearInt).
-		Select("COUNT(DISTINCT CONCAT(student_id, '-', date))").
-		Scan(&totalAttendance)
-	h.db.Model(&models.Attendance{}).
-		Where("school_id = ? AND term = ? AND year = ? AND status = 'present'", schoolID, term, yearInt).
-		Select("COUNT(DISTINCT CONCAT(student_id, '-', date))").
-		Scan(&presentCount)
+	
+	if period == "today" {
+		// Today's attendance - only count if attendance was marked today
+		today := time.Now().Format("2006-01-02")
+		h.db.Model(&models.Attendance{}).
+			Where("school_id = ? AND date::date = ?::date", schoolID, today).
+			Count(&totalAttendance)
+		h.db.Model(&models.Attendance{}).
+			Where("school_id = ? AND date::date = ?::date AND status = 'present'", schoolID, today).
+			Count(&presentCount)
+	} else {
+		// Term/year attendance
+		h.db.Model(&models.Attendance{}).
+			Where("school_id = ? AND term = ? AND year = ?", schoolID, term, yearInt).
+			Select("COUNT(DISTINCT CONCAT(student_id, '-', date))").
+			Scan(&totalAttendance)
+		h.db.Model(&models.Attendance{}).
+			Where("school_id = ? AND term = ? AND year = ? AND status = 'present'", schoolID, term, yearInt).
+			Select("COUNT(DISTINCT CONCAT(student_id, '-', date))").
+			Scan(&presentCount)
+	}
+	
 	if totalAttendance > 0 {
 		summary.AttendanceRate = float64(presentCount) / float64(totalAttendance) * 100
 	}

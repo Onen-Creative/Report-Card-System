@@ -27,7 +27,7 @@ export default function SchoolAdminDashboard() {
         api.get('/staff'),
         api.get('/classes'),
         api.get('/fees', { params: { term, year } }),
-        api.get('/attendance/stats').catch(() => ({ data: { present: 0, total_days: 0, percentage: 0 } })),
+        api.get('/attendance/stats', { params: { period: 'today' } }).catch(() => ({ data: { present: 0, total_days: 0, percentage: 0 } })),
         api.get('/finance/summary', { params: { term, year } })
       ])
 

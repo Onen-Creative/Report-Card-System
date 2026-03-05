@@ -366,11 +366,17 @@ func (h *AttendanceHandler) GetAttendanceStats(c *gin.Context) {
 	studentID := c.Query("student_id")
 	startDate := c.Query("start_date")
 	endDate := c.Query("end_date")
+	period := c.Query("period")
 
 	// Calculate date range
 	var start, end time.Time
 	now := time.Now()
-	if startDate != "" && endDate != "" {
+	
+	if period == "today" {
+		// For today, only count if attendance was marked
+		start = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		end = now
+	} else if startDate != "" && endDate != "" {
 		start, _ = time.Parse("2006-01-02", startDate)
 		end, _ = time.Parse("2006-01-02", endDate)
 	} else {
@@ -423,12 +429,20 @@ func (h *AttendanceHandler) GetAttendanceStats(c *gin.Context) {
 	query.Where("status = 'late'").Count(&stats.Late)
 	query.Where("status = 'sick'").Count(&stats.Sick)
 	query.Where("status = 'excused'").Count(&stats.Excused)
+	query.Where("status = 'absent'").Count(&stats.Absent)
 
-	// Calculate absent as total school days minus present
-	stats.Absent = totalSchoolDays - stats.Present
-
-	if stats.TotalDays > 0 {
-		stats.Percentage = float64(stats.Present) / float64(stats.TotalDays) * 100
+	// For today, only show percentage if attendance was marked
+	if period == "today" {
+		markedToday := stats.Present + stats.Absent + stats.Late + stats.Sick + stats.Excused
+		if markedToday > 0 {
+			stats.Percentage = float64(stats.Present) / float64(markedToday) * 100
+		} else {
+			stats.Percentage = 0
+		}
+	} else {
+		if stats.TotalDays > 0 {
+			stats.Percentage = float64(stats.Present) / float64(stats.TotalDays) * 100
+		}
 	}
 
 	c.JSON(http.StatusOK, stats)
@@ -560,8 +574,10 @@ func (h *AttendanceHandler) GetClassAttendanceSummary(c *gin.Context) {
 			Where("student_id = ? AND class_id = ? AND date BETWEEN ? AND ? AND status = 'late'", student.ID, classID, start, end).
 			Count(&s.Late)
 		
-		// Calculate absent as total school days minus present
-		s.Absent = totalSchoolDays - s.Present
+		// Count absent days
+		h.db.Table("attendances").
+			Where("student_id = ? AND class_id = ? AND date BETWEEN ? AND ? AND status = 'absent'", student.ID, classID, start, end).
+			Count(&s.Absent)
 
 		if s.TotalDays > 0 {
 			s.Percentage = float64(s.Present) / float64(s.TotalDays) * 100
@@ -687,8 +703,12 @@ func (h *AttendanceHandler) GetStudentAttendanceHistory(c *gin.Context) {
 		}
 	}
 
-	// Calculate absent as total school days minus present
-	stats.Absent = stats.TotalSchoolDays - stats.Present
+	// Count absent days from actual records
+	for _, att := range attendances {
+		if att.Status == "absent" {
+			stats.Absent++
+		}
+	}
 
 	if stats.TotalSchoolDays > 0 {
 		stats.Percentage = float64(stats.Present) / float64(stats.TotalSchoolDays) * 100
@@ -882,8 +902,10 @@ func (h *AttendanceHandler) GetAttendanceReport(c *gin.Context) {
 			Where("student_id = ? AND class_id = ? AND date BETWEEN ? AND ? AND status = 'present'", student.ID, classID, start, end).
 			Count(&present)
 		
-		// Calculate absent as total school days minus days attended
-		absent = totalSchoolDays - present
+		// Count absent days from actual records
+		h.db.Model(&models.Attendance{}).
+			Where("student_id = ? AND class_id = ? AND date BETWEEN ? AND ? AND status = 'absent'", student.ID, classID, start, end).
+			Count(&absent)
 
 		percentage := 0.0
 		if totalSchoolDays > 0 {
