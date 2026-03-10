@@ -8,8 +8,8 @@ api.acadistra.com {
     reverse_proxy backend:8080
 }
 
-# School subdomains - all route to same frontend
-school1.acadistra.com, school2.acadistra.com, school3.acadistra.com, school4.acadistra.com, school5.acadistra.com {
+# Wildcard for ALL school subdomains - handles unlimited schools automatically
+*.acadistra.com {
     reverse_proxy frontend:3000
 }
 

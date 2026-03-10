@@ -337,26 +337,11 @@ export const ReportCardTemplate: React.FC<ReportCardProps> = ({
 
         {/* Footer */}
         <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: '1fr 1fr', 
-          gap: '20px',
-          paddingTop: '4px',
-          borderTop: '2px solid #d1d5db'
+          paddingTop: '8px',
+          borderTop: '2px solid #d1d5db',
+          textAlign: 'center'
         }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ borderTop: '2px solid black', paddingTop: '2px', marginTop: '8px' }}>
-              <p style={{ fontSize: '9px', fontWeight: '600', margin: 0 }}>Class Teacher</p>
-            </div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ borderTop: '2px solid black', paddingTop: '2px', marginTop: '8px' }}>
-              <p style={{ fontSize: '9px', fontWeight: '600', margin: 0 }}>Head Teacher</p>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ textAlign: 'center', marginTop: '3px', fontSize: '8px', color: '#6b7280' }}>
-          <p style={{ margin: 0 }}>Generated on {new Date().toLocaleDateString()}</p>
+          <p style={{ fontSize: '9px', color: '#6b7280', margin: 0 }}>Generated on {new Date().toLocaleDateString()}</p>
         </div>
         </div>
       </div>

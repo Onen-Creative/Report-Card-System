@@ -201,15 +201,9 @@ export default function NurseryReportCard({
                    parseFloat(stats.average) >= 35 ? 'Fair performance. More effort is needed.' :
                    'Needs significant improvement. Extra support recommended.'}
                 </p>
-                <div style={{ borderTop: '1px solid #000', paddingTop: '6px', display: 'flex', justifyContent: 'space-between' }}>
-                  <div>
-                    <p style={{ fontSize: '7px', margin: '0 0 2px 0', color: '#000' }}>Teacher Name</p>
-                    <p style={{ fontSize: '8px', margin: 0, fontWeight: '600' }}>_______________</p>
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '7px', margin: '0 0 2px 0', color: '#000' }}>Signature</p>
-                    <p style={{ fontSize: '8px', margin: 0, fontWeight: '600' }}>_______________</p>
-                  </div>
+                <div style={{ borderTop: '1px solid #000', paddingTop: '6px' }}>
+                  <p style={{ fontSize: '7px', margin: '0 0 2px 0', color: '#000' }}>Signature</p>
+                  <p style={{ fontSize: '8px', margin: 0, fontWeight: '600' }}>_______________</p>
                 </div>
               </div>
               <div style={{ background: '#f8fafc', padding: '10px', border: '1px solid #000', borderRadius: '4px', marginBottom: '10px' }}>
@@ -221,15 +215,9 @@ export default function NurseryReportCard({
                    parseFloat(stats.average) >= 35 ? 'Requires more dedication and focus.' :
                    'Immediate intervention required. Arrange parent meeting.'}
                 </p>
-                <div style={{ borderTop: '1px solid #000', paddingTop: '6px', display: 'flex', justifyContent: 'space-between' }}>
-                  <div>
-                    <p style={{ fontSize: '7px', margin: '0 0 2px 0', color: '#000' }}>Principal Name</p>
-                    <p style={{ fontSize: '8px', margin: 0, fontWeight: '600' }}>_______________</p>
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '7px', margin: '0 0 2px 0', color: '#000' }}>Signature & Stamp</p>
-                    <p style={{ fontSize: '8px', margin: 0, fontWeight: '600' }}>_______________</p>
-                  </div>
+                <div style={{ borderTop: '1px solid #000', paddingTop: '6px' }}>
+                  <p style={{ fontSize: '7px', margin: '0 0 2px 0', color: '#000' }}>Signature & Stamp</p>
+                  <p style={{ fontSize: '8px', margin: 0, fontWeight: '600' }}>_______________</p>
                 </div>
               </div>
 

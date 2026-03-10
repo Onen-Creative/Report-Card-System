@@ -85,8 +85,8 @@ func (h *ClassHandler) Create(c *gin.Context) {
 
 	// Handle teacher_profile_id - validate if provided
 	if class.TeacherProfileID != nil && *class.TeacherProfileID != uuid.Nil {
-		var staff models.Staff
-		if err := h.db.First(&staff, "id = ? AND school_id = ? AND role = ?", *class.TeacherProfileID, class.SchoolID, "Teacher").Error; err != nil {
+		var teacherProfile models.TeacherProfile
+		if err := h.db.First(&teacherProfile, "id = ? AND school_id = ?", *class.TeacherProfileID, class.SchoolID).Error; err != nil {
 			class.TeacherProfileID = nil
 		}
 	} else {
@@ -119,7 +119,7 @@ func (h *ClassHandler) Create(c *gin.Context) {
 func (h *ClassHandler) Get(c *gin.Context) {
 	id := c.Param("id")
 	var class models.Class
-	if err := h.db.Preload("TeacherProfile.Staff").Preload("School").First(&class, "id = ?", id).Error; err != nil {
+	if err := h.db.Preload("TeacherProfile").Preload("TeacherProfile.Staff").Preload("School").First(&class, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Class not found"})
 		return
 	}
@@ -265,4 +265,19 @@ func (h *ClassHandler) Delete(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Class deleted successfully"})
+}
+
+func (h *ClassHandler) GetTeacherClasses(c *gin.Context) {
+	teacherName := c.Query("name")
+	schoolID := c.GetString("tenant_school_id")
+
+	var classes []models.Class
+	h.db.Joins("JOIN teacher_profiles ON teacher_profiles.id = classes.teacher_profile_id").
+		Joins("JOIN staff ON staff.id = teacher_profiles.staff_id").
+		Where("staff.first_name LIKE ? OR staff.last_name LIKE ?", "%"+teacherName+"%", "%"+teacherName+"%").
+		Where("classes.school_id = ?", schoolID).
+		Preload("TeacherProfile.Staff").
+		Find(&classes)
+
+	c.JSON(http.StatusOK, gin.H{"classes": classes})
 }

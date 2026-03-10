@@ -74,6 +74,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           { href: '/lessons', label: 'Lesson Monitoring', icon: BookOpen },
           { href: '/inventory', label: 'Inventory', icon: Package },
           { href: '/reports', label: 'Reports', icon: BarChart3 },
+          { href: '/analytics', label: 'Performance Analytics', icon: BarChart3 },
           { href: '/payroll', label: 'Payroll', icon: DollarSign },
           { href: '/finance', label: 'Finance', icon: DollarSign },
           { href: '/finance/budget', label: 'Budget', icon: DollarSign },

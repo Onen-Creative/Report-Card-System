@@ -40,18 +40,32 @@ export default function AdvancedLevelReportCard({
 
   const calculateTotalPoints = () => {
     let totalPoints = 0
+    
     subjects?.forEach((subject: any) => {
       const result = results?.find((r: any) => r.subject_id === subject.id)
       const grade = result?.final_grade?.trim()
+      
+      // Check if subsidiary subject (ICT or General Paper)
+      const isSubsidiary = subject.name?.toLowerCase().includes('ict') || 
+                          subject.name?.toLowerCase().includes('general paper') ||
+                          subject.name?.toLowerCase().includes('subsidiary')
+      
       if (grade) {
-        if (grade === 'A') totalPoints += 6
-        else if (grade === 'B') totalPoints += 5
-        else if (grade === 'C') totalPoints += 4
-        else if (grade === 'D') totalPoints += 3
-        else if (grade === 'E') totalPoints += 2
-        else if (grade === 'O') totalPoints += 1
+        if (isSubsidiary) {
+          // Subsidiary subjects: O=1, F=0
+          if (grade === 'O') totalPoints += 1
+        } else {
+          // Main subjects: A=6, B=5, C=4, D=3, E=2, F=0
+          if (grade === 'A') totalPoints += 6
+          else if (grade === 'B') totalPoints += 5
+          else if (grade === 'C') totalPoints += 4
+          else if (grade === 'D') totalPoints += 3
+          else if (grade === 'E') totalPoints += 2
+          // F = 0 points (no addition needed)
+        }
       }
     })
+    
     return totalPoints
   }
 
@@ -140,16 +154,24 @@ export default function AdvancedLevelReportCard({
                                       subject.name?.toLowerCase().includes('general paper') ||
                                       subject.name?.toLowerCase().includes('subsidiary')
                   
-                  // Extract marks for each paper
+                  // Extract marks for each paper - check paper column
                   const paper1 = subjectResults.find((r: any) => r.paper === 1)
                   const paper2 = subjectResults.find((r: any) => r.paper === 2)
                   const paper3 = subjectResults.find((r: any) => r.paper === 3)
                   
-                  const p1 = paper1?.raw_marks ? ((paper1.raw_marks.ca || 0) + (paper1.raw_marks.exam || 0)) : 0
-                  const p2 = paper2?.raw_marks ? ((paper2.raw_marks.ca || 0) + (paper2.raw_marks.exam || 0)) : 0
-                  const p3 = paper3?.raw_marks ? ((paper3.raw_marks.ca || 0) + (paper3.raw_marks.exam || 0)) : 0
+                  // Calculate marks - check both total and ca+exam
+                  const p1 = paper1?.raw_marks ? (paper1.raw_marks.total || ((paper1.raw_marks.ca || 0) + (paper1.raw_marks.exam || 0))) : 0
+                  const p2 = paper2?.raw_marks ? (paper2.raw_marks.total || ((paper2.raw_marks.ca || 0) + (paper2.raw_marks.exam || 0))) : 0
+                  const p3 = paper3?.raw_marks ? (paper3.raw_marks.total || ((paper3.raw_marks.ca || 0) + (paper3.raw_marks.exam || 0))) : 0
                   
-                  let grade = paper1?.final_grade?.trim() || paper2?.final_grade?.trim() || paper3?.final_grade?.trim() || ''
+                  // Get grade from any result that has it
+                  let grade = ''
+                  for (const result of subjectResults) {
+                    if (result?.final_grade?.trim()) {
+                      grade = result.final_grade.trim()
+                      break
+                    }
+                  }
                   
                   // For subsidiary subjects, override grade based on marks
                   if (isSubsidiary && p1 > 0) {
@@ -218,15 +240,9 @@ export default function AdvancedLevelReportCard({
                 <p style={{ fontSize: '8px', margin: '0 0 10px 0', lineHeight: '1.4', color: '#000' }}>
                   {totalPoints >= 18 ? 'Outstanding performance! Excellent work.' : totalPoints >= 14 ? 'Very good performance. Keep it up.' : totalPoints >= 10 ? 'Good effort. Continue working hard.' : totalPoints >= 6 ? 'Fair performance. More effort needed.' : 'Needs significant improvement.'}
                 </p>
-                <div style={{ borderTop: '1px solid #000', paddingTop: '4px', display: 'flex', justifyContent: 'space-between' }}>
-                  <div>
-                    <p style={{ fontSize: '6px', margin: '0 0 2px 0', color: '#000' }}>Name</p>
-                    <p style={{ fontSize: '7px', margin: 0, fontWeight: '600' }}>__________</p>
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '6px', margin: '0 0 2px 0', color: '#000' }}>Sign</p>
-                    <p style={{ fontSize: '7px', margin: 0, fontWeight: '600' }}>__________</p>
-                  </div>
+                <div style={{ borderTop: '1px solid #000', paddingTop: '4px' }}>
+                  <p style={{ fontSize: '6px', margin: '0 0 2px 0', color: '#000' }}>Sign</p>
+                  <p style={{ fontSize: '7px', margin: 0, fontWeight: '600' }}>__________</p>
                 </div>
               </div>
               <div style={{ background: '#f8fafc', padding: '8px', border: '1px solid #000', borderRadius: '3px', marginBottom: '8px' }}>
@@ -234,15 +250,9 @@ export default function AdvancedLevelReportCard({
                 <p style={{ fontSize: '8px', margin: '0 0 10px 0', lineHeight: '1.4', color: '#000' }}>
                   {totalPoints >= 18 ? 'Exemplary achievement! Well done.' : totalPoints >= 14 ? 'Commendable performance.' : totalPoints >= 10 ? 'Satisfactory progress.' : totalPoints >= 6 ? 'Requires more dedication.' : 'Immediate intervention required.'}
                 </p>
-                <div style={{ borderTop: '1px solid #000', paddingTop: '4px', display: 'flex', justifyContent: 'space-between' }}>
-                  <div>
-                    <p style={{ fontSize: '6px', margin: '0 0 2px 0', color: '#000' }}>Name</p>
-                    <p style={{ fontSize: '7px', margin: 0, fontWeight: '600' }}>__________</p>
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '6px', margin: '0 0 2px 0', color: '#000' }}>Sign & Stamp</p>
-                    <p style={{ fontSize: '7px', margin: 0, fontWeight: '600' }}>__________</p>
-                  </div>
+                <div style={{ borderTop: '1px solid #000', paddingTop: '4px' }}>
+                  <p style={{ fontSize: '6px', margin: '0 0 2px 0', color: '#000' }}>Sign & Stamp</p>
+                  <p style={{ fontSize: '7px', margin: 0, fontWeight: '600' }}>__________</p>
                 </div>
               </div>
 

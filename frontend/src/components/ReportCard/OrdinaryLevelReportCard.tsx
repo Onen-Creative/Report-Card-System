@@ -217,15 +217,9 @@ export default function OrdinaryLevelReportCard({
                    parseFloat(stats.average) >= 35 ? 'Fair performance. More effort needed.' :
                    'Poor performance. Needs improvement.'}
                 </p>
-                <div style={{ borderTop: '1px solid #000', paddingTop: '4px', display: 'flex', justifyContent: 'space-between' }}>
-                  <div>
-                    <p style={{ fontSize: '6px', margin: '0 0 2px 0', color: '#000' }}>Name</p>
-                    <p style={{ fontSize: '7px', margin: 0, fontWeight: '600' }}>__________</p>
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '6px', margin: '0 0 2px 0', color: '#000' }}>Sign</p>
-                    <p style={{ fontSize: '7px', margin: 0, fontWeight: '600' }}>__________</p>
-                  </div>
+                <div style={{ borderTop: '1px solid #000', paddingTop: '4px' }}>
+                  <p style={{ fontSize: '6px', margin: '0 0 2px 0', color: '#000' }}>Sign</p>
+                  <p style={{ fontSize: '7px', margin: 0, fontWeight: '600' }}>__________</p>
                 </div>
               </div>
               <div style={{ background: '#f8fafc', padding: '8px', border: '1px solid #000', borderRadius: '3px', marginBottom: '8px' }}>
@@ -237,15 +231,9 @@ export default function OrdinaryLevelReportCard({
                    parseFloat(stats.average) >= 35 ? 'Requires more dedication.' :
                    'Immediate intervention required.'}
                 </p>
-                <div style={{ borderTop: '1px solid #000', paddingTop: '4px', display: 'flex', justifyContent: 'space-between' }}>
-                  <div>
-                    <p style={{ fontSize: '6px', margin: '0 0 2px 0', color: '#000' }}>Name</p>
-                    <p style={{ fontSize: '7px', margin: 0, fontWeight: '600' }}>__________</p>
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '6px', margin: '0 0 2px 0', color: '#000' }}>Sign & Stamp</p>
-                    <p style={{ fontSize: '7px', margin: 0, fontWeight: '600' }}>__________</p>
-                  </div>
+                <div style={{ borderTop: '1px solid #000', paddingTop: '4px' }}>
+                  <p style={{ fontSize: '6px', margin: '0 0 2px 0', color: '#000' }}>Sign & Stamp</p>
+                  <p style={{ fontSize: '7px', margin: 0, fontWeight: '600' }}>__________</p>
                 </div>
               </div>
 
