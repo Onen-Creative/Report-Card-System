@@ -137,6 +137,36 @@ export default function ParentFeesPage() {
               </div>
             </div>
 
+            {fees.fee_breakdown && Object.keys(fees.fee_breakdown).length > 0 && (
+              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Fee Breakdown</h3>
+                <div className="space-y-3">
+                  {Object.entries(fees.fee_breakdown).map(([category, total]: [string, any]) => {
+                    const paid = fees.paid_breakdown?.[category] || 0
+                    const outstanding = total - paid
+                    return (
+                      <div key={category} className="border-b border-gray-100 pb-3 last:border-0">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-semibold text-gray-900 capitalize">{category}</span>
+                          <span className="text-sm text-gray-600">{formatCurrency(total)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-green-600">Paid: {formatCurrency(paid)}</span>
+                          <span className="text-red-600">Outstanding: {formatCurrency(outstanding)}</span>
+                        </div>
+                        <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-green-500 to-green-600" 
+                            style={{ width: `${(paid / total) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
               <h3 className="text-xl font-bold text-gray-900 mb-6">Payment History</h3>
               <div className="overflow-x-auto">
@@ -161,6 +191,19 @@ export default function ParentFeesPage() {
                         </td>
                         <td className="py-3 px-4">
                           <span className="font-bold text-green-600">{formatCurrency(payment.amount)}</span>
+                          {payment.payment_breakdown && Object.keys(payment.payment_breakdown).length > 0 && (
+                            <details className="mt-1">
+                              <summary className="text-xs text-blue-600 cursor-pointer">View breakdown</summary>
+                              <div className="mt-1 text-xs space-y-1">
+                                {Object.entries(payment.payment_breakdown).map(([key, value]: [string, any]) => (
+                                  <div key={key} className="flex justify-between">
+                                    <span className="text-gray-600 capitalize">{key}:</span>
+                                    <span className="font-medium">{formatCurrency(value)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </details>
+                          )}
                         </td>
                         <td className="py-3 px-4">
                           <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">

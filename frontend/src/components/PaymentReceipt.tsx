@@ -11,10 +11,12 @@ interface PaymentReceiptProps {
     payment_method: string
     receipt_no: string
     notes?: string
+    payment_breakdown?: {[key: string]: number}
   }
   studentFees: {
     student: {
       first_name: string
+      middle_name?: string
       last_name: string
       admission_no: string
       lin?: string
@@ -25,6 +27,8 @@ interface PaymentReceiptProps {
     total_fees: number
     amount_paid: number
     outstanding: number
+    fee_breakdown?: {[key: string]: number}
+    paid_breakdown?: {[key: string]: number}
   }
   onClose: () => void
 }
@@ -116,7 +120,7 @@ export default function PaymentReceipt({ payment, studentFees, onClose }: Paymen
             <h3 className="font-bold text-black mb-2 bg-gray-200 p-2 text-sm">STUDENT INFORMATION</h3>
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div>
-                <p><span className="font-medium">Student Name:</span> {studentFees.student.first_name} {studentFees.student.last_name}</p>
+                <p><span className="font-medium">Student Name:</span> {studentFees.student.first_name}{studentFees.student.middle_name && ` ${studentFees.student.middle_name}`} {studentFees.student.last_name}</p>
                 <p><span className="font-medium">Admission Number:</span> {studentFees.student.admission_no}</p>
               </div>
               <div>
@@ -132,26 +136,87 @@ export default function PaymentReceipt({ payment, studentFees, onClose }: Paymen
             <h3 className="font-bold text-black mb-2 bg-gray-200 p-2 text-sm">PAYMENT BREAKDOWN</h3>
             <table className="w-full text-xs border border-gray-300">
               <tbody>
-                <tr className="border-b">
-                  <td className="p-2 font-medium">Total School Fees</td>
-                  <td className="p-2 text-right">UGX {studentFees.total_fees.toLocaleString()}</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="p-2 font-medium">Previous Payments</td>
-                  <td className="p-2 text-right">UGX {(studentFees.amount_paid - payment.amount).toLocaleString()}</td>
-                </tr>
-                <tr className="border-b bg-green-50">
-                  <td className="p-2 font-bold text-green-700">Current Payment</td>
-                  <td className="p-2 text-right font-bold text-green-700">UGX {payment.amount.toLocaleString()}</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="p-2 font-medium">Total Paid</td>
-                  <td className="p-2 text-right">UGX {studentFees.amount_paid.toLocaleString()}</td>
-                </tr>
-                <tr className="bg-red-50">
-                  <td className="p-2 font-bold text-red-700">Outstanding Balance</td>
-                  <td className="p-2 text-right font-bold text-red-700">UGX {studentFees.outstanding.toLocaleString()}</td>
-                </tr>
+                {studentFees.fee_breakdown && Object.keys(studentFees.fee_breakdown).length > 0 ? (
+                  <>
+                    {/* Itemized Breakdown */}
+                    {Object.entries(studentFees.fee_breakdown).map(([category, total]: [string, any]) => {
+                      const previousPaid = (studentFees.paid_breakdown?.[category] || 0) - (payment.payment_breakdown?.[category] || 0)
+                      const currentPayment = payment.payment_breakdown?.[category] || 0
+                      const totalPaid = studentFees.paid_breakdown?.[category] || 0
+                      const outstanding = total - totalPaid
+                      
+                      return (
+                        <tr key={category} className="border-b">
+                          <td className="p-2">
+                            <div className="font-medium">{category}</div>
+                            <div className="text-xs text-gray-600 ml-2">
+                              Total: UGX {total.toLocaleString()} | 
+                              Prev Paid: UGX {previousPaid.toLocaleString()} | 
+                              <span className="text-green-700 font-medium">Now: UGX {currentPayment.toLocaleString()}</span> | 
+                              <span className="text-red-700">Balance: UGX {outstanding.toLocaleString()}</span>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                    <tr className="border-t-2 border-black">
+                      <td className="p-2">
+                        <div className="flex justify-between font-bold">
+                          <span>TOTAL</span>
+                          <span>UGX {studentFees.total_fees.toLocaleString()}</span>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr className="bg-green-50">
+                      <td className="p-2">
+                        <div className="flex justify-between font-bold text-green-700">
+                          <span>Current Payment</span>
+                          <span>UGX {payment.amount.toLocaleString()}</span>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-2">
+                        <div className="flex justify-between font-medium">
+                          <span>Total Paid</span>
+                          <span>UGX {studentFees.amount_paid.toLocaleString()}</span>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr className="bg-red-50">
+                      <td className="p-2">
+                        <div className="flex justify-between font-bold text-red-700">
+                          <span>Outstanding Balance</span>
+                          <span>UGX {studentFees.outstanding.toLocaleString()}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  </>
+                ) : (
+                  <>
+                    {/* Simple Breakdown */}
+                    <tr className="border-b">
+                      <td className="p-2 font-medium">Total School Fees</td>
+                      <td className="p-2 text-right">UGX {studentFees.total_fees.toLocaleString()}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="p-2 font-medium">Previous Payments</td>
+                      <td className="p-2 text-right">UGX {(studentFees.amount_paid - payment.amount).toLocaleString()}</td>
+                    </tr>
+                    <tr className="border-b bg-green-50">
+                      <td className="p-2 font-bold text-green-700">Current Payment</td>
+                      <td className="p-2 text-right font-bold text-green-700">UGX {payment.amount.toLocaleString()}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="p-2 font-medium">Total Paid</td>
+                      <td className="p-2 text-right">UGX {studentFees.amount_paid.toLocaleString()}</td>
+                    </tr>
+                    <tr className="bg-red-50">
+                      <td className="p-2 font-bold text-red-700">Outstanding Balance</td>
+                      <td className="p-2 text-right font-bold text-red-700">UGX {studentFees.outstanding.toLocaleString()}</td>
+                    </tr>
+                  </>
+                )}
               </tbody>
             </table>
           </div>
