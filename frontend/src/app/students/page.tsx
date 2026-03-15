@@ -41,8 +41,13 @@ export default function StudentsPage() {
   const [selectedTerm, setSelectedTerm] = useState('Term 1')
   const [editModalOpened, { open: openEdit, close: closeEdit }] = useDisclosure()
   const [importModalOpened, { open: openImport, close: closeImport }] = useDisclosure()
+  const [photoUploadModalOpened, { open: openPhotoUpload, close: closePhotoUpload }] = useDisclosure()
   const [editingStudent, setEditingStudent] = useState<any>(null)
   const [file, setFile] = useState<File | null>(null)
+  const [photoFiles, setPhotoFiles] = useState<File[]>([])
+  const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({})
+  const [uploadResults, setUploadResults] = useState<{success: number, failed: number, total: number}>({success: 0, failed: 0, total: 0})
+  const [photoUploadClass, setPhotoUploadClass] = useState('')
   const [activeStep, setActiveStep] = useState(0)
   const [importId, setImportId] = useState('')
   const [importYear, setImportYear] = useState('2026')
@@ -130,6 +135,110 @@ export default function StudentsPage() {
       console.error('Upload error:', error.response?.data)
     }
   })
+
+  const { data: photoClassStudents } = useQuery({
+    queryKey: ['students-for-photos', photoUploadClass, selectedYear, selectedTerm],
+    queryFn: async () => {
+      if (!photoUploadClass) return []
+      const params: any = { class_id: photoUploadClass, year: selectedYear, term: selectedTerm, limit: 500 }
+      const response = await studentsApi.list(params)
+      return Array.isArray(response) ? response : response.students
+    },
+    enabled: !!photoUploadClass
+  })
+
+  const bulkPhotoUploadMutation = useMutation({
+    mutationFn: async (files: File[]) => {
+      const results = { success: 0, failed: 0, total: files.length }
+      const students = photoClassStudents || []
+      
+      for (const file of files) {
+        try {
+          // Extract full name from filename (e.g., "John Doe.jpg")
+          const fileName = file.name.split('.').slice(0, -1).join('.')
+          
+          // Find matching student by full name
+          const student = students.find((s: Student) => {
+            const fullName = `${s.first_name} ${s.middle_name || ''} ${s.last_name}`.trim().replace(/\s+/g, ' ')
+            return fullName.toLowerCase() === fileName.toLowerCase()
+          })
+          
+          if (!student) {
+            results.failed++
+            setUploadProgress(prev => ({ ...prev, [fileName]: -1 }))
+            continue
+          }
+          
+          // Upload photo
+          const formData = new FormData()
+          formData.append('photo', file)
+          
+          const token = localStorage.getItem('access_token')
+          const uploadRes = await fetch(`http://localhost:8080/api/v1/upload/student-photo`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+          })
+          
+          if (!uploadRes.ok) {
+            results.failed++
+            setUploadProgress(prev => ({ ...prev, [fileName]: -1 }))
+            continue
+          }
+          
+          const uploadData = await uploadRes.json()
+          
+          // Update student with photo URL
+          const updateRes = await fetch(`http://localhost:8080/api/v1/students/${student.id}`, {
+            method: 'PUT',
+            headers: { 
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ photo_url: uploadData.photo_url })
+          })
+          
+          if (updateRes.ok) {
+            results.success++
+            setUploadProgress(prev => ({ ...prev, [fileName]: 100 }))
+          } else {
+            results.failed++
+            setUploadProgress(prev => ({ ...prev, [fileName]: -1 }))
+          }
+        } catch (error) {
+          results.failed++
+        }
+      }
+      
+      return results
+    },
+    onSuccess: (results) => {
+      setUploadResults(results)
+      queryClient.invalidateQueries({ queryKey: ['students'] })
+      notifications.show({ 
+        title: 'Upload Complete', 
+        message: `${results.success} photos uploaded successfully, ${results.failed} failed`, 
+        color: results.failed === 0 ? 'green' : 'yellow' 
+      })
+    },
+    onError: () => {
+      notifications.show({ title: 'Error', message: 'Bulk upload failed', color: 'red' })
+    }
+  })
+
+  const handleBulkPhotoUpload = () => {
+    if (!photoUploadClass) {
+      notifications.show({ title: 'Error', message: 'Please select a class', color: 'red' })
+      return
+    }
+    if (photoFiles.length === 0) {
+      notifications.show({ title: 'Error', message: 'Please select photos', color: 'red' })
+      return
+    }
+    setUploadProgress({})
+    setUploadResults({success: 0, failed: 0, total: photoFiles.length})
+    bulkPhotoUploadMutation.mutate(photoFiles)
+  }
 
   const approveMutation = useMutation({
     mutationFn: (id: string) => {
@@ -220,6 +329,15 @@ export default function StudentsPage() {
               <p className="text-indigo-100">{selectedLevel || selectedClass ? `Academic Year ${selectedYear}, Term ${selectedTerm}` : 'All Students'}</p>
             </div>
             <div className="flex gap-3">
+              <button
+                onClick={openPhotoUpload}
+                className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-lg font-medium shadow-lg transition-colors flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Bulk Photos
+              </button>
               <button
                 onClick={openImport}
                 className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-lg font-medium shadow-lg transition-colors flex items-center gap-2"
@@ -408,17 +526,20 @@ export default function StudentsPage() {
                         <div className="flex items-center gap-2">
                           {student.photo_url ? (
                             <img 
-                              src={student.photo_url} 
+                              src={student.photo_url.startsWith('http') ? student.photo_url : `http://localhost:8080${student.photo_url}`}
                               alt={`${student.first_name} ${student.last_name}`}
                               className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none'
+                                e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                              }}
                             />
-                          ) : (
-                            <div className="w-8 h-8 bg-gradient-to-br from-indigo-400 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                              <span className="text-xs font-medium text-white">
-                                {student.first_name[0]}{student.last_name[0]}
-                              </span>
-                            </div>
-                          )}
+                          ) : null}
+                          <div className={`w-8 h-8 bg-gradient-to-br from-indigo-400 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0 ${student.photo_url ? 'hidden' : ''}`}>
+                            <span className="text-xs font-medium text-white">
+                              {student.first_name[0]}{student.last_name[0]}
+                            </span>
+                          </div>
                           <div className="min-w-0">
                             <div className="text-sm font-medium text-gray-900 truncate">
                               {student.first_name} {student.middle_name ? student.middle_name + ' ' : ''}{student.last_name}
@@ -477,6 +598,158 @@ export default function StudentsPage() {
             </div>
           </div>
         )}
+
+        {/* Bulk Photo Upload Modal */}
+        <Modal 
+          opened={photoUploadModalOpened} 
+          onClose={() => { 
+            closePhotoUpload(); 
+            setPhotoFiles([]); 
+            setUploadProgress({}); 
+            setUploadResults({success: 0, failed: 0, total: 0});
+            setPhotoUploadClass(''); 
+          }} 
+          title="Bulk Photo Upload" 
+          size="lg"
+        >
+          <div className="space-y-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <Text size="sm" fw={500} c="blue" mb="xs">Instructions:</Text>
+              <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
+                <li>Select the class first</li>
+                <li>Name each photo file with the student's full name exactly as in the system</li>
+                <li>Example: "John Doe.jpg" or "John Peter Doe.jpg" (with middle name)</li>
+                <li>Names are case-insensitive but must match exactly</li>
+                <li>Supported formats: JPG, JPEG, PNG</li>
+                <li>Maximum file size: 10MB per photo</li>
+              </ul>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Class *
+              </label>
+              <select
+                value={photoUploadClass}
+                onChange={(e) => setPhotoUploadClass(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              >
+                <option value="">Choose a class...</option>
+                {classesData?.classes?.map((c: any) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              {photoUploadClass && photoClassStudents && (
+                <Text size="xs" c="dimmed" mt="xs">
+                  {photoClassStudents.length} students in this class
+                </Text>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Photos
+              </label>
+              <input
+                type="file"
+                multiple
+                accept="image/jpeg,image/jpg,image/png"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || [])
+                  setPhotoFiles(files)
+                }}
+                className="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-500 transition-colors cursor-pointer"
+              />
+              {photoFiles.length > 0 && (
+                <Text size="sm" c="dimmed" mt="xs">
+                  {photoFiles.length} photo(s) selected
+                </Text>
+              )}
+            </div>
+
+            {photoFiles.length > 0 && (
+              <div className="bg-white border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">
+                <Text size="sm" fw={500} mb="xs">Selected Photos:</Text>
+                <div className="space-y-2">
+                  {photoFiles.map((file, idx) => {
+                    const fileName = file.name.split('.').slice(0, -1).join('.')
+                    const progress = uploadProgress[fileName]
+                    return (
+                      <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <div className="flex items-center gap-2 flex-1">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <Text size="xs" className="truncate">{file.name}</Text>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Text size="xs" c="dimmed">{(file.size / 1024).toFixed(1)} KB</Text>
+                          {progress === 100 && (
+                            <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                          {progress === -1 && (
+                            <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {uploadResults.total > 0 && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <Text size="sm" fw={500} c="green" mb="xs">Upload Results:</Text>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Text size="xs" c="dimmed">Total</Text>
+                    <Text size="lg" fw={600}>{uploadResults.total}</Text>
+                  </div>
+                  <div>
+                    <Text size="xs" c="dimmed">Success</Text>
+                    <Text size="lg" fw={600} c="green">{uploadResults.success}</Text>
+                  </div>
+                  <div>
+                    <Text size="xs" c="dimmed">Failed</Text>
+                    <Text size="lg" fw={600} c="red">{uploadResults.failed}</Text>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <Group>
+              <Button 
+                onClick={handleBulkPhotoUpload}
+                disabled={photoFiles.length === 0 || !photoUploadClass}
+                loading={bulkPhotoUploadMutation.isPending}
+                leftSection={
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                }
+              >
+                Upload {photoFiles.length} Photo(s)
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => { 
+                  closePhotoUpload(); 
+                  setPhotoFiles([]); 
+                  setUploadProgress({}); 
+                  setUploadResults({success: 0, failed: 0, total: 0});
+                  setPhotoUploadClass(''); 
+                }}
+              >
+                Close
+              </Button>
+            </Group>
+          </div>
+        </Modal>
 
         {/* Import Modal */}
         <Modal opened={importModalOpened} onClose={() => { closeImport(); setActiveStep(0); setFile(null); setImportId(''); setImportYear('2026'); setImportTerm('Term 1'); setImportClass(''); setImportDetails(null); }} title="Import Students" size="xl">

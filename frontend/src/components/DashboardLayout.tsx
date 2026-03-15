@@ -19,6 +19,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [showSearchResults, setShowSearchResults] = useState(false)
   const { colorScheme, toggleColorScheme } = useMantineColorScheme()
   
   const router = useRouter()
@@ -48,6 +52,141 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       router.push('/login')
     }
   }
+
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query)
+    
+    if (query.trim().length < 2) {
+      setSearchResults([])
+      setShowSearchResults(false)
+      return
+    }
+
+    setSearchLoading(true)
+    setShowSearchResults(true)
+
+    try {
+      const token = localStorage.getItem('access_token')
+      const results: any[] = []
+      const searchLower = query.toLowerCase().trim()
+
+      // Search students
+      if (['school_admin', 'teacher', 'bursar', 'nurse'].includes(user?.role)) {
+        try {
+          const studentsRes = await fetch(`http://localhost:8080/api/v1/students`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          if (studentsRes.ok) {
+            const data = await studentsRes.json()
+            const students = (data.students || []).filter((s: any) => {
+              const fullName = `${s.first_name} ${s.middle_name || ''} ${s.last_name}`.toLowerCase()
+              const admissionNo = (s.admission_no || '').toLowerCase()
+              const className = (s.class?.name || '').toLowerCase()
+              return fullName.includes(searchLower) || 
+                     admissionNo.includes(searchLower) || 
+                     className.includes(searchLower)
+            }).slice(0, 5)
+            
+            students.forEach((s: any) => {
+              results.push({
+                type: 'student',
+                id: s.id,
+                title: `${s.first_name} ${s.middle_name || ''} ${s.last_name}`,
+                subtitle: `${s.admission_no} • ${s.class?.name || 'No class'}`,
+                link: `/students/${s.id}`,
+                icon: '👨🎓'
+              })
+            })
+          }
+        } catch (e) { console.error('Student search error:', e) }
+      }
+
+      // Search staff
+      if (['school_admin'].includes(user?.role)) {
+        try {
+          const staffRes = await fetch(`http://localhost:8080/api/v1/staff`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          if (staffRes.ok) {
+            const data = await staffRes.json()
+            const staff = (data || []).filter((s: any) => {
+              const fullName = `${s.first_name} ${s.middle_name || ''} ${s.last_name}`.toLowerCase()
+              const staffId = (s.staff_id || '').toLowerCase()
+              const role = (s.role || '').toLowerCase()
+              return fullName.includes(searchLower) || 
+                     staffId.includes(searchLower) || 
+                     role.includes(searchLower)
+            }).slice(0, 5)
+            
+            staff.forEach((s: any) => {
+              results.push({
+                type: 'staff',
+                id: s.id,
+                title: `${s.first_name} ${s.middle_name || ''} ${s.last_name}`,
+                subtitle: `${s.staff_id} • ${s.role || 'Staff'}`,
+                link: `/staff`,
+                icon: '👨🏫'
+              })
+            })
+          }
+        } catch (e) { console.error('Staff search error:', e) }
+      }
+
+      // Search classes
+      if (['school_admin', 'teacher'].includes(user?.role)) {
+        try {
+          const classesRes = await fetch(`http://localhost:8080/api/v1/classes`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          if (classesRes.ok) {
+            const data = await classesRes.json()
+            const classes = (data || []).filter((c: any) => {
+              const name = (c.name || '').toLowerCase()
+              const level = (c.level || '').toLowerCase()
+              return name.includes(searchLower) || level.includes(searchLower)
+            }).slice(0, 3)
+            
+            classes.forEach((c: any) => {
+              results.push({
+                type: 'class',
+                id: c.id,
+                title: c.name,
+                subtitle: `${c.level} • ${c.student_count || 0} students`,
+                link: `/classes/${c.id}`,
+                icon: '📚'
+              })
+            })
+          }
+        } catch (e) { console.error('Class search error:', e) }
+      }
+
+      setSearchResults(results.slice(0, 8))
+    } catch (error) {
+      console.error('Search error:', error)
+      setSearchResults([])
+    } finally {
+      setSearchLoading(false)
+    }
+  }
+
+  const handleSearchResultClick = (link: string) => {
+    setShowSearchResults(false)
+    setSearchQuery('')
+    setSearchResults([])
+    router.push(link)
+  }
+
+  // Close search results when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (!target.closest('.search-container')) {
+        setShowSearchResults(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const getMenuItems = () => {
     switch (user?.role) {
@@ -220,14 +359,58 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </button>
                 
                 {/* Search Bar */}
-                <div className="hidden md:flex items-center flex-1 max-w-xl">
+                <div className="hidden md:flex items-center flex-1 max-w-xl search-container">
                   <div className="relative w-full group">
                     <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                     <input
                       type="text"
+                      value={searchQuery}
+                      onChange={(e) => handleSearch(e.target.value)}
+                      onFocus={() => searchResults.length > 0 && setShowSearchResults(true)}
                       placeholder="Search students, staff, classes..."
                       className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-300 placeholder:text-slate-400"
                     />
+                    
+                    {/* Search Results Dropdown */}
+                    {showSearchResults && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-slate-200 max-h-96 overflow-y-auto z-50 animate-fade-in">
+                        {searchLoading ? (
+                          <div className="p-8 text-center">
+                            <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                            <p className="text-sm text-slate-500 mt-3">Searching...</p>
+                          </div>
+                        ) : searchResults.length > 0 ? (
+                          <div className="py-2">
+                            {searchResults.map((result, idx) => (
+                              <button
+                                key={`${result.type}-${result.id}-${idx}`}
+                                onClick={() => handleSearchResultClick(result.link)}
+                                className="w-full px-4 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3 text-left group"
+                              >
+                                <div className="w-10 h-10 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                                  {result.icon}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-slate-900 truncate">{result.title}</p>
+                                  <p className="text-xs text-slate-500 truncate">{result.subtitle}</p>
+                                </div>
+                                <div className="px-2 py-1 bg-slate-100 rounded text-xs font-medium text-slate-600 capitalize">
+                                  {result.type}
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        ) : searchQuery.length >= 2 ? (
+                          <div className="p-8 text-center">
+                            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                              <Search className="w-8 h-8 text-slate-400" />
+                            </div>
+                            <p className="text-sm font-medium text-slate-900 mb-1">No results found</p>
+                            <p className="text-xs text-slate-500">Try searching with different keywords</p>
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
