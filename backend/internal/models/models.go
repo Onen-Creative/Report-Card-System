@@ -343,6 +343,8 @@ type StudentFees struct {
 	Term          string    `gorm:"type:varchar(10);not null;uniqueIndex:idx_student_fees" json:"term"`
 	Year          int       `gorm:"not null;uniqueIndex:idx_student_fees" json:"year"`
 	TotalFees     float64   `gorm:"type:decimal(10,2);not null" json:"total_fees"`
+	FeeBreakdown  JSONB     `gorm:"type:json" json:"fee_breakdown"` // {"tuition": 500000, "uniform": 50000, "medical": 30000}
+	PaidBreakdown JSONB     `gorm:"type:json" json:"paid_breakdown"` // {"tuition": 300000, "uniform": 50000, "medical": 0}
 	AmountPaid    float64   `gorm:"type:decimal(10,2);default:0" json:"amount_paid"`
 	Outstanding   float64   `gorm:"type:decimal(10,2);default:0" json:"outstanding"`
 	Student       *Student  `gorm:"foreignKey:StudentID" json:"student,omitempty"`
@@ -359,6 +361,7 @@ type FeesPayment struct {
 	ReceiptNo     string       `gorm:"type:varchar(100)" json:"receipt_no"`
 	Notes         string       `gorm:"type:text" json:"notes"`
 	RecordedBy    uuid.UUID    `gorm:"type:char(36);not null" json:"recorded_by"`
+	PaymentBreakdown JSONB     `gorm:"type:json" json:"payment_breakdown"` // {"tuition": 300000, "uniform": 50000}
 	StudentFees   *StudentFees `gorm:"foreignKey:StudentFeesID" json:"student_fees,omitempty"`
 }
 

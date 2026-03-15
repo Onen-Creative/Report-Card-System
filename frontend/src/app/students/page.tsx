@@ -24,6 +24,7 @@ interface Student {
   email?: string
   phone?: string
   status: string
+  photo_url?: string
   guardians?: Array<{
     full_name: string
     phone: string
@@ -405,11 +406,19 @@ export default function StudentsPage() {
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-gradient-to-br from-indigo-400 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-xs font-medium text-white">
-                              {student.first_name[0]}{student.last_name[0]}
-                            </span>
-                          </div>
+                          {student.photo_url ? (
+                            <img 
+                              src={student.photo_url} 
+                              alt={`${student.first_name} ${student.last_name}`}
+                              className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 bg-gradient-to-br from-indigo-400 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                              <span className="text-xs font-medium text-white">
+                                {student.first_name[0]}{student.last_name[0]}
+                              </span>
+                            </div>
+                          )}
                           <div className="min-w-0">
                             <div className="text-sm font-medium text-gray-900 truncate">
                               {student.first_name} {student.middle_name ? student.middle_name + ' ' : ''}{student.last_name}

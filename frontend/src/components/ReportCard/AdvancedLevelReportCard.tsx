@@ -98,6 +98,19 @@ export default function AdvancedLevelReportCard({
               <p style={{ fontSize: '6px', margin: '1px 0 0 0', color: '#000' }}>{examType}</p>
             </div>
           </div>
+          {student?.photo_url ? (
+            <img 
+              src={student.photo_url.startsWith('http') ? student.photo_url : `http://localhost:8080${student.photo_url}`}
+              alt="Student"
+              style={{ height: '50px', width: '50px', objectFit: 'cover', borderRadius: '6px', border: '2px solid #000' }}
+            />
+          ) : (
+            <div style={{ height: '50px', width: '50px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #000' }}>
+              <span style={{ fontSize: '18px', fontWeight: '700', color: 'white' }}>
+                {student?.first_name?.[0]}{student?.last_name?.[0]}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Student Information Bar */}

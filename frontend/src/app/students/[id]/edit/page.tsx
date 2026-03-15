@@ -8,12 +8,16 @@ import { FormInput, FormSelect, FormTextarea, FormSection, FormCard, FormActions
 import api from '@/services/api'
 import { useForm } from 'react-hook-form'
 import { notifications } from '@mantine/notifications'
+import { FileInput } from '@mantine/core'
+import { useState } from 'react'
 
 export default function EditStudentPage() {
   const params = useParams()
   const router = useRouter()
   const queryClient = useQueryClient()
   const studentId = params.id as string
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
 
   const { data: studentData, isLoading } = useQuery({
     queryKey: ['student', studentId],
@@ -60,8 +64,37 @@ export default function EditStudentPage() {
     }
   })
 
-  const onSubmit = (data: any) => {
-    updateMutation.mutate(data)
+  const handlePhotoChange = (file: File | null) => {
+    setPhotoFile(file)
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => setPhotoPreview(reader.result as string)
+      reader.readAsDataURL(file)
+    } else {
+      setPhotoPreview(null)
+    }
+  }
+
+  const onSubmit = async (data: any) => {
+    let photoUrl = data.photo_url || ''
+    
+    if (photoFile) {
+      try {
+        const formData = new FormData()
+        formData.append('photo', photoFile)
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/upload/student-photo`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` },
+          body: formData
+        })
+        const result = await res.json()
+        if (result.photo_url) photoUrl = result.photo_url
+      } catch (error) {
+        console.error('Photo upload failed:', error)
+      }
+    }
+    
+    updateMutation.mutate({ ...data, photo_url: photoUrl })
   }
 
   if (isLoading) {
@@ -83,6 +116,26 @@ export default function EditStudentPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <FormCard>
             <FormSection title="Personal Information" icon="👤">
+              <div className="md:col-span-2 flex flex-col items-center mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Student Photo (Optional)</label>
+                {(photoPreview || studentData?.photo_url) && (
+                  <div className="mb-3">
+                    <img 
+                      src={photoPreview || studentData?.photo_url} 
+                      alt="Student" 
+                      className="w-32 h-32 rounded-lg object-cover border-2 border-gray-300" 
+                    />
+                  </div>
+                )}
+                <FileInput
+                  placeholder="Upload new photo"
+                  accept="image/*"
+                  value={photoFile}
+                  onChange={handlePhotoChange}
+                  className="w-full max-w-md"
+                />
+                <p className="text-xs text-gray-500 mt-1">Max 10MB. Will be optimized automatically.</p>
+              </div>
               <FormInput
                 {...register('first_name', { required: 'First name is required' })}
                 label="First Name"

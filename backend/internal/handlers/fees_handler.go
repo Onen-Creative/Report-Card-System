@@ -26,7 +26,6 @@ func (h *FeesHandler) ListStudentFees(c *gin.Context) {
 	schoolID := c.GetString("tenant_school_id")
 	term := c.Query("term")
 	yearStr := c.Query("year")
-	level := c.Query("level")
 	search := c.Query("search")
 	page := c.DefaultQuery("page", "1")
 	limit := c.DefaultQuery("limit", "10")
@@ -36,28 +35,13 @@ func (h *FeesHandler) ListStudentFees(c *gin.Context) {
 		return
 	}
 
-	type FeeWithClass struct {
-		ID          uuid.UUID `json:"id"`
-		CreatedAt   time.Time `json:"created_at"`
-		UpdatedAt   time.Time `json:"updated_at"`
-		StudentID   uuid.UUID `json:"student_id"`
-		SchoolID    uuid.UUID `json:"school_id"`
-		Term        string    `json:"term"`
-		Year        int       `json:"year"`
-		TotalFees   float64   `json:"total_fees"`
-		AmountPaid  float64   `json:"amount_paid"`
-		Outstanding float64   `json:"outstanding"`
-		ClassLevel  string    `json:"class_level"`
-		Student     *models.Student `json:"student,omitempty"`
-	}
-
-	var fees []FeeWithClass
-	query := h.db.Table("student_fees").
-		Select("student_fees.*, classes.level as class_level").
-		Joins("LEFT JOIN students ON student_fees.student_id = students.id").
-		Joins("LEFT JOIN enrollments ON students.id = enrollments.student_id AND enrollments.status = 'active'").
-		Joins("LEFT JOIN classes ON enrollments.class_id = classes.id").
-		Where("student_fees.school_id = ?", schoolID)
+	// Use StudentFees model directly to get all fields including JSONB
+	var fees []models.StudentFees
+	
+	// Get class_id filter if provided
+	classID := c.Query("class_id")
+	
+	query := h.db.Where("student_fees.school_id = ?", schoolID)
 
 	if term != "" {
 		query = query.Where("student_fees.term = ?", term)
@@ -71,20 +55,34 @@ func (h *FeesHandler) ListStudentFees(c *gin.Context) {
 		query = query.Where("students.first_name ILIKE ? OR students.last_name ILIKE ? OR students.admission_no ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 
-	if level != "" {
-		query = query.Where("classes.level = ?", level)
+	// Filter by class_id if provided
+	if classID != "" {
+		// Get student IDs in this class
+		var studentIDs []uuid.UUID
+		h.db.Table("enrollments").
+			Select("student_id").
+			Where("class_id = ? AND status = 'active'", classID).
+			Pluck("student_id", &studentIDs)
+		
+		if len(studentIDs) > 0 {
+			query = query.Where("student_fees.student_id IN ?", studentIDs)
+		} else {
+			// No students in class, return empty
+			c.JSON(http.StatusOK, gin.H{"fees": []models.StudentFees{}, "total": 0})
+			return
+		}
 	}
 
 	var total int64
-	query.Count(&total)
+	query.Model(&models.StudentFees{}).Count(&total)
 
 	offset := (utils.Atoi(page) - 1) * utils.Atoi(limit)
-	if err := query.Offset(offset).Limit(utils.Atoi(limit)).Scan(&fees).Error; err != nil {
+	if err := query.Offset(offset).Limit(utils.Atoi(limit)).Find(&fees).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Load student data for each fee
+	// Load student data and payments for each fee
 	for i := range fees {
 		var student models.Student
 		if err := h.db.First(&student, "id = ?", fees[i].StudentID).Error; err == nil {
@@ -97,6 +95,12 @@ func (h *FeesHandler) ListStudentFees(c *gin.Context) {
 			}
 			fees[i].Student = &student
 		}
+		
+		// Load payment history for this fee record
+		var payments []models.FeesPayment
+		h.db.Where("student_fees_id = ?", fees[i].ID).Order("payment_date DESC").Find(&payments)
+		// Store payments in a temporary field (we'll need to add this to response)
+		// For now, we can add it via a custom response structure if needed
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -110,10 +114,11 @@ func (h *FeesHandler) ListStudentFees(c *gin.Context) {
 // Create or update student fees
 func (h *FeesHandler) CreateOrUpdateStudentFees(c *gin.Context) {
 	var req struct {
-		StudentID string  `json:"student_id" binding:"required"`
-		Term      string  `json:"term" binding:"required"`
-		Year      int     `json:"year" binding:"required"`
-		TotalFees float64 `json:"total_fees" binding:"required"`
+		StudentID    string             `json:"student_id" binding:"required"`
+		Term         string             `json:"term" binding:"required"`
+		Year         int                `json:"year" binding:"required"`
+		TotalFees    float64            `json:"total_fees" binding:"required"`
+		FeeBreakdown map[string]float64 `json:"fee_breakdown"` // {"tuition": 500000, "uniform": 50000}
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -136,6 +141,14 @@ func (h *FeesHandler) CreateOrUpdateStudentFees(c *gin.Context) {
 		return
 	}
 
+	// Convert fee breakdown to JSONB
+	feeBreakdown := models.JSONB{}
+	if req.FeeBreakdown != nil {
+		for k, v := range req.FeeBreakdown {
+			feeBreakdown[k] = v
+		}
+	}
+
 	// Check if fees record exists
 	var fees models.StudentFees
 	err = h.db.Where("student_id = ? AND term = ? AND year = ?", studentID, req.Term, req.Year).First(&fees).Error
@@ -143,13 +156,14 @@ func (h *FeesHandler) CreateOrUpdateStudentFees(c *gin.Context) {
 	if err == gorm.ErrRecordNotFound {
 		// Create new record
 		fees = models.StudentFees{
-			StudentID:   studentID,
-			SchoolID:    uuid.MustParse(schoolID),
-			Term:        req.Term,
-			Year:        req.Year,
-			TotalFees:   req.TotalFees,
-			AmountPaid:  0,
-			Outstanding: req.TotalFees,
+			StudentID:    studentID,
+			SchoolID:     uuid.MustParse(schoolID),
+			Term:         req.Term,
+			Year:         req.Year,
+			TotalFees:    req.TotalFees,
+			FeeBreakdown: feeBreakdown,
+			AmountPaid:   0,
+			Outstanding:  req.TotalFees,
 		}
 		if err := h.db.Create(&fees).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -162,6 +176,7 @@ func (h *FeesHandler) CreateOrUpdateStudentFees(c *gin.Context) {
 	} else {
 		// Update existing record
 		fees.TotalFees = req.TotalFees
+		fees.FeeBreakdown = feeBreakdown
 		fees.Outstanding = req.TotalFees - fees.AmountPaid
 		if err := h.db.Save(&fees).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -176,11 +191,12 @@ func (h *FeesHandler) CreateOrUpdateStudentFees(c *gin.Context) {
 // Record payment
 func (h *FeesHandler) RecordPayment(c *gin.Context) {
 	var req struct {
-		StudentFeesID string  `json:"student_fees_id" binding:"required"`
-		Amount        float64 `json:"amount" binding:"required,gt=0"`
-		PaymentMethod string  `json:"payment_method"`
-		ReceiptNo     string  `json:"receipt_no"`
-		Notes         string  `json:"notes"`
+		StudentFeesID    string             `json:"student_fees_id" binding:"required"`
+		Amount           float64            `json:"amount" binding:"required,gt=0"`
+		PaymentMethod    string             `json:"payment_method"`
+		ReceiptNo        string             `json:"receipt_no"`
+		Notes            string             `json:"notes"`
+		PaymentBreakdown map[string]float64 `json:"payment_breakdown"` // {"tuition": 300000, "uniform": 50000}
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -231,14 +247,23 @@ func (h *FeesHandler) RecordPayment(c *gin.Context) {
 		}
 	}()
 
+	// Convert payment breakdown to JSONB
+	paymentBreakdown := models.JSONB{}
+	if req.PaymentBreakdown != nil {
+		for k, v := range req.PaymentBreakdown {
+			paymentBreakdown[k] = v
+		}
+	}
+
 	payment := models.FeesPayment{
-		StudentFeesID: studentFeesID,
-		Amount:        req.Amount,
-		PaymentDate:   time.Now(),
-		PaymentMethod: req.PaymentMethod,
-		ReceiptNo:     req.ReceiptNo,
-		Notes:         req.Notes,
-		RecordedBy:    userID,
+		StudentFeesID:    studentFeesID,
+		Amount:           req.Amount,
+		PaymentDate:      time.Now(),
+		PaymentMethod:    req.PaymentMethod,
+		ReceiptNo:        req.ReceiptNo,
+		Notes:            req.Notes,
+		RecordedBy:       userID,
+		PaymentBreakdown: paymentBreakdown,
 	}
 
 	if err := tx.Create(&payment).Error; err != nil {
@@ -250,6 +275,21 @@ func (h *FeesHandler) RecordPayment(c *gin.Context) {
 	// Update student fees totals
 	studentFees.AmountPaid += req.Amount
 	studentFees.Outstanding = studentFees.TotalFees - studentFees.AmountPaid
+
+	// Update paid breakdown
+	if studentFees.PaidBreakdown == nil {
+		studentFees.PaidBreakdown = models.JSONB{}
+	}
+	if req.PaymentBreakdown != nil {
+		for category, amount := range req.PaymentBreakdown {
+			if existingPaid, ok := studentFees.PaidBreakdown[category].(float64); ok {
+				studentFees.PaidBreakdown[category] = existingPaid + amount
+			} else {
+				studentFees.PaidBreakdown[category] = amount
+			}
+		}
+	}
+
 	if err := tx.Save(&studentFees).Error; err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -316,7 +356,7 @@ func (h *FeesHandler) GetStudentFeesDetails(c *gin.Context) {
 	}
 
 	var payments []models.FeesPayment
-	h.db.Where("student_fees_id = ?", studentFeesID).Find(&payments)
+	h.db.Where("student_fees_id = ?", studentFeesID).Order("payment_date DESC").Find(&payments)
 
 	c.JSON(http.StatusOK, gin.H{
 		"fees":     fees,

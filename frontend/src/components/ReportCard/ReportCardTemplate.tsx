@@ -162,9 +162,13 @@ export const ReportCardTemplate: React.FC<ReportCardProps> = ({
             {/* Student Photo */}
             <div style={{ width: '60px', height: '60px', flexShrink: 0, border: '2px solid #d1d5db', borderRadius: '4px', overflow: 'hidden', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {student?.photo_url ? (
-                <img src={student.photo_url} alt="Student" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={student.photo_url.startsWith('http') ? student.photo_url : `http://localhost:8080${student.photo_url}`} alt="Student" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
-                <span style={{ fontSize: '8px', color: '#9ca3af', textAlign: 'center' }}>Student Photo</span>
+                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: '20px', fontWeight: 'bold', color: 'white' }}>
+                    {student?.first_name?.[0]}{student?.last_name?.[0]}
+                  </span>
+                </div>
               )}
             </div>
           </div>

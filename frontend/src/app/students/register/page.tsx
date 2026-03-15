@@ -11,6 +11,7 @@ import { studentsApi, classesApi, schoolsApi } from '@/services/api'
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { PageHeader } from '@/components/ui/BeautifulComponents'
 import { FormInput, FormSelect, FormTextarea, FormSection, FormCard, FormActions, StepIndicator, FormGrid, FullWidthField } from '@/components/ui/FormComponents'
+import { FileInput } from '@mantine/core'
 const studentSchema = z.object({
   first_name: z.string().min(1, 'Required'),
   middle_name: z.string().optional(),
@@ -48,6 +49,8 @@ type StudentForm = z.infer<typeof studentSchema>
 export default function StudentRegistrationPage() {
   const router = useRouter()
   const [step, setStep] = useState(0)
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<StudentForm>({
     resolver: zodResolver(studentSchema),
@@ -86,7 +89,36 @@ export default function StudentRegistrationPage() {
     },
   })
 
-  const onSubmit = (data: StudentForm) => {
+  const handlePhotoChange = (file: File | null) => {
+    setPhotoFile(file)
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => setPhotoPreview(reader.result as string)
+      reader.readAsDataURL(file)
+    } else {
+      setPhotoPreview(null)
+    }
+  }
+
+  const onSubmit = async (data: StudentForm) => {
+    let photoUrl = ''
+    
+    if (photoFile) {
+      try {
+        const formData = new FormData()
+        formData.append('photo', photoFile)
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/upload/student-photo`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` },
+          body: formData
+        })
+        const result = await res.json()
+        if (result.photo_url) photoUrl = result.photo_url
+      } catch (error) {
+        console.error('Photo upload failed:', error)
+      }
+    }
+
     const payload = {
       first_name: data.first_name,
       middle_name: data.middle_name || '',
@@ -110,6 +142,7 @@ export default function StudentRegistrationPage() {
       previous_class: data.previous_class || '',
       special_needs: data.special_needs || '',
       disability_status: data.disability_status || '',
+      photo_url: photoUrl,
       guardians: [{
         relationship: data.guardian_relationship,
         full_name: data.guardian_full_name,
@@ -148,6 +181,22 @@ export default function StudentRegistrationPage() {
           {step === 0 && (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
               <FormSection title="Personal Information" icon="👤">
+                <div className="md:col-span-2 flex flex-col items-center mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Student Photo (Optional)</label>
+                  {photoPreview && (
+                    <div className="mb-3">
+                      <img src={photoPreview} alt="Preview" className="w-32 h-32 rounded-lg object-cover border-2 border-gray-300" />
+                    </div>
+                  )}
+                  <FileInput
+                    placeholder="Upload photo"
+                    accept="image/*"
+                    value={photoFile}
+                    onChange={handlePhotoChange}
+                    className="w-full max-w-md"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Max 10MB. Will be optimized automatically.</p>
+                </div>
                 <FormInput
                   {...register('first_name')}
                   label="First Name"

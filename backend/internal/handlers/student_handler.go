@@ -66,6 +66,7 @@ func (h *StudentHandler) Update(c *gin.Context) {
 		SpecialNeeds     string `json:"special_needs"`
 		DisabilityStatus string `json:"disability_status"`
 		Status           string `json:"status"`
+		PhotoURL         string `json:"photo_url"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -134,6 +135,9 @@ func (h *StudentHandler) Update(c *gin.Context) {
 	}
 	if req.Status != "" {
 		student.Status = req.Status
+	}
+	if req.PhotoURL != "" {
+		student.PhotoURL = req.PhotoURL
 	}
 
 	if err := h.db.Save(&student).Error; err != nil {

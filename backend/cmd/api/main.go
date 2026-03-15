@@ -79,6 +79,7 @@ func main() {
 
 	// Static files
 	r.Static("/logos", "./public/logos")
+	r.Static("/photos", "./public/photos")
 
 	// Health check - simple endpoint that doesn't require DB
 	r.GET("/health", func(c *gin.Context) {
@@ -151,6 +152,7 @@ func main() {
 	settingsHandler := handlers.NewSettingsHandler(db)
 	notificationHandler := handlers.NewNotificationHandler(db)
 	integrationActivityHandler := handlers.NewIntegrationActivityHandler(db)
+	analyticsHandler := handlers.NewAnalyticsHandler(db)
 	
 	// Initialize SMS and Email services
 	smsService := services.NewSMSService(
@@ -699,6 +701,13 @@ func main() {
 			protected.GET("/students/:id", studentHandler.Get)
 			protected.GET("/students/:id/results", resultHandler.GetByStudent)
 			protected.GET("/results/performance-summary", resultHandler.GetPerformanceSummary)
+			
+			// Analytics routes
+			protected.GET("/analytics/subject-trend", analyticsHandler.SubjectPerformanceTrend)
+			protected.GET("/analytics/student-progress/:student_id", analyticsHandler.StudentProgressTracking)
+			protected.GET("/analytics/class-comparison", analyticsHandler.ClassComparison)
+			protected.GET("/analytics/subject-comparison", analyticsHandler.SubjectComparison)
+			protected.GET("/analytics/term-comparison", analyticsHandler.TermComparison)
 			protected.GET("/subjects", subjectHandler.ListStandardSubjects)
 			protected.GET("/subjects/school", subjectHandler.GetSchoolSubjects)
 			protected.GET("/subjects/levels", subjectHandler.GetLevels)
@@ -711,6 +720,7 @@ func main() {
 				c.JSON(200, gin.H{"received": body, "headers": c.Request.Header})
 			})
 			protected.POST("/upload/logo", uploadHandler.UploadLogo)
+			protected.POST("/upload/student-photo", uploadHandler.UploadStudentPhoto)
 		}
 	}
 

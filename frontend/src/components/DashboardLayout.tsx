@@ -8,7 +8,7 @@ import {
   LayoutDashboard, School, UserPlus, Users, Settings, FileText, BarChart3,
   GraduationCap, BookOpen, ClipboardList, DollarSign, Package,
   Calendar, Edit3, Eye, Library, Stethoscope, Pill, Menu as MenuIcon,
-  LogOut, User, Moon, Sun
+  LogOut, User, Moon, Sun, Bell, Search, ChevronDown, X
 } from 'lucide-react'
 
 interface DashboardLayoutProps {
@@ -150,22 +150,31 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const menuItems = getMenuItems()
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30">
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 shadow-2xl transform transition-all duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-200 flex-shrink-0">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center">
-              <School className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between gap-3 px-6 py-6 border-b border-slate-700/50 flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/50 animate-float">
+                <School className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-white">Acadistra</h1>
+                <p className="text-xs text-slate-400">School Management</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900">Acadistra</h1>
-            </div>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto custom-scrollbar">
             {menuItems.map((item) => {
               const Icon = item.icon
               const isActive = pathname === item.href
@@ -174,14 +183,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   key={item.href}
                   href={item.href}
                   prefetch={true}
-                  className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  onClick={() => setSidebarOpen(false)}
+                  className={`group flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-300 ${
                     isActive
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-500/30'
+                      : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
                   }`}
                 >
-                  <Icon className="w-5 h-5" />
+                  <Icon className={`w-5 h-5 transition-transform duration-300 ${
+                    isActive ? 'scale-110' : 'group-hover:scale-110'
+                  }`} />
                   <span>{item.label}</span>
+                  {isActive && (
+                    <div className="ml-auto w-2 h-2 bg-white rounded-full animate-pulse" />
+                  )}
                 </Link>
               )
             })}
@@ -190,56 +205,92 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col lg:ml-64 min-h-screen">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden p-2 text-gray-600 hover:text-gray-900"
-            >
-              <MenuIcon className="w-6 h-6" />
-            </button>
-            <div className="flex-1"></div>
-            <div className="flex items-center gap-2 sm:gap-4">
-              <button
-                onClick={() => toggleColorScheme()}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                title={colorScheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              >
-                {colorScheme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-              </button>
-              <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 bg-gray-50 rounded-lg">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center flex-shrink-0">
-                  <User className="w-4 h-4 text-white" />
-                </div>
-                <div className="hidden sm:block">
-                  <p className="text-sm font-medium text-gray-900">{user.full_name}</p>
-                  <p className="text-xs text-gray-500 capitalize">{user.role?.replace('_', ' ')}</p>
+      <div className="flex-1 flex flex-col lg:ml-72 min-h-screen">
+        {/* Modern Navbar */}
+        <header className="bg-white/90 backdrop-blur-xl border-b border-slate-200/60 shadow-sm flex-shrink-0 sticky top-0 z-30">
+          <div className="px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center justify-between gap-4">
+              {/* Left Section */}
+              <div className="flex items-center gap-4 flex-1">
+                <button
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="lg:hidden p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all duration-300 hover:scale-105"
+                >
+                  <MenuIcon className="w-6 h-6" />
+                </button>
+                
+                {/* Search Bar */}
+                <div className="hidden md:flex items-center flex-1 max-w-xl">
+                  <div className="relative w-full group">
+                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                    <input
+                      type="text"
+                      placeholder="Search students, staff, classes..."
+                      className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-300 placeholder:text-slate-400"
+                    />
+                  </div>
                 </div>
               </div>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Logout"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </button>
+
+              {/* Right Section */}
+              <div className="flex items-center gap-2">
+                {/* Theme Toggle */}
+                <button
+                  onClick={() => toggleColorScheme()}
+                  className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all duration-300 hover:scale-105"
+                  title={colorScheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                >
+                  {colorScheme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                </button>
+
+                {/* Notifications */}
+                <button className="relative p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all duration-300 hover:scale-105 group">
+                  <Bell className="w-5 h-5" />
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-ping" />
+                </button>
+
+                {/* Divider */}
+                <div className="hidden sm:block w-px h-8 bg-slate-200 mx-2" />
+
+                {/* User Profile */}
+                <div className="flex items-center gap-3 px-3 py-2 bg-gradient-to-r from-slate-50 to-blue-50/50 border border-slate-200 rounded-xl hover:shadow-md hover:border-blue-200 transition-all duration-300 group cursor-pointer">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-300">
+                    <User className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="hidden sm:block">
+                    <p className="text-sm font-semibold text-slate-900">{user.full_name}</p>
+                    <p className="text-xs text-slate-500 capitalize">{user.role?.replace('_', ' ')}</p>
+                  </div>
+                  <ChevronDown className="hidden sm:block w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors" />
+                </div>
+
+                {/* Logout Button */}
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 group"
+                  title="Logout"
+                >
+                  <LogOut className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+                  <span className="hidden sm:inline">Logout</span>
+                </button>
+              </div>
             </div>
           </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
-          {children}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          <div className="max-w-[1600px] mx-auto">
+            {children}
+          </div>
         </main>
       </div>
 
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden transition-opacity duration-300"
           onClick={() => setSidebarOpen(false)}
         />
       )}
