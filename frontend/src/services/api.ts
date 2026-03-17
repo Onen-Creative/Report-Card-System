@@ -1,7 +1,23 @@
 import axios from 'axios';
 import type { AuthResponse, LoginRequest, TokenPair } from '@/types';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+// Determine API URL based on environment
+const getApiUrl = () => {
+  // If explicitly set, use it
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  
+  // In browser, use relative path (works with Caddy proxy)
+  if (typeof window !== 'undefined') {
+    return '/api/v1';
+  }
+  
+  // Server-side fallback
+  return 'http://localhost:8080/api/v1';
+};
+
+const API_URL = getApiUrl();
 
 export const api = axios.create({
   baseURL: API_URL,
