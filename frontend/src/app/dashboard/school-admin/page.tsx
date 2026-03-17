@@ -31,10 +31,10 @@ export default function SchoolAdminDashboard() {
         api.get('/api/v1/finance/summary', { params: { term, year } })
       ])
 
-      const students = studentsRes.data?.students || []
-      const staff = staffRes.data || []
-      const classes = classesRes.data || []
-      const fees = feesRes.data?.fees || []
+      const students = Array.isArray(studentsRes.data?.students) ? studentsRes.data.students : []
+      const staff = Array.isArray(staffRes.data) ? staffRes.data : []
+      const classes = Array.isArray(classesRes.data) ? classesRes.data : []
+      const fees = Array.isArray(feesRes.data?.fees) ? feesRes.data.fees : []
       const attendance = attendanceRes.data || {}
       const finance = financeRes.data || {}
 

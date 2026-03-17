@@ -117,7 +117,8 @@ export default function LessonMonitoringPage() {
     const loadingToast = toast.loading('Generating report...');
     try {
       const response = await api.get(`/lessons/export?period=${period}`);
-      const data = response.data.lessons.map((l: any, i: number) => ({
+      const lessons = Array.isArray(response.data.lessons) ? response.data.lessons : [];
+      const data = lessons.map((l: any, i: number) => ({
         '#': i + 1,
         'Date': new Date(l.lesson_date).toLocaleDateString(),
         'Time': l.lesson_time,
