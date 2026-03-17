@@ -12,7 +12,7 @@ export default function SystemAdminDashboard() {
   
   const { data: stats, isLoading } = useQuery({
     queryKey: ['system-stats'],
-    queryFn: () => api.get('/api/v1/stats').then(res => res.data),
+    queryFn: () => api.get('/stats').then(res => res.data),
   })
 
   const StatCard = ({ title, value, icon, gradient, link, trend }: any) => (
