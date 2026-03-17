@@ -355,7 +355,7 @@ export default function SchoolAdminDashboard() {
               </div>
             </div>
             <div className="p-6 space-y-3">
-              {stats?.students?.recent?.map((student: any) => (
+              {Array.isArray(stats?.students?.recent) && stats.students.recent.map((student: any) => (
                 <div key={student.id} className="flex items-center justify-between p-4 rounded-xl hover:bg-blue-50 transition-all border border-transparent hover:border-blue-200">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
@@ -387,7 +387,7 @@ export default function SchoolAdminDashboard() {
               </div>
             </div>
             <div className="p-6 space-y-3">
-              {stats?.classes?.list?.map((classItem: any) => (
+              {Array.isArray(stats?.classes?.list) && stats.classes.list.map((classItem: any) => (
                 <div key={classItem.id} className="flex items-center justify-between p-4 rounded-xl hover:bg-purple-50 transition-all border border-transparent hover:border-purple-200">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold shadow-lg">
