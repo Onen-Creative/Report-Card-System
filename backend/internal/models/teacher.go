@@ -14,7 +14,7 @@ type TeacherProfile struct {
 	TeachingLevels     string    `gorm:"type:varchar(255)" json:"teaching_levels"` // e.g., "P1-P3,S1-S4"
 	SubjectsTaught     string    `gorm:"type:text" json:"subjects_taught"` // JSON array of subject IDs
 	IsClassTeacher     bool      `gorm:"default:false" json:"is_class_teacher"`
-	ClassTeacherFor    *uuid.UUID `gorm:"type:char(36)" json:"class_teacher_for,omitempty"` // Class ID
+	ClassTeacherFor    *uuid.UUID `gorm:"type:char(36)" json:"class_teacher_for,omitempty"` // Class ID - no FK to avoid circular dependency
 	IsHeadOfDepartment bool      `gorm:"default:false" json:"is_head_of_department"`
 	DepartmentHead     string    `gorm:"type:varchar(100)" json:"department_head"` // e.g., "Sciences", "Languages"
 	
@@ -25,7 +25,6 @@ type TeacherProfile struct {
 	// Relations
 	Staff              *Staff    `gorm:"foreignKey:StaffID" json:"staff,omitempty"`
 	School             *School   `gorm:"foreignKey:SchoolID" json:"school,omitempty"`
-	Class              *Class    `gorm:"foreignKey:ClassTeacherFor" json:"class,omitempty"`
 }
 
 // TeacherSubject links teachers to subjects they teach

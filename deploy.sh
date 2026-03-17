@@ -16,49 +16,19 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Check if running as root
-if [ "$EUID" -eq 0 ]; then 
-   echo -e "${RED}Please do not run as root. Run as regular user with sudo access.${NC}"
-   exit 1
-fi
 
 # Function to generate secure password
 generate_password() {
     openssl rand -base64 32 | tr -d "=+/" | cut -c1-32
 }
 
-# Check if .env.production exists
-if [ ! -f .env.production ]; then
-    echo -e "${YELLOW}Creating .env.production with secure passwords...${NC}"
-    
-    POSTGRES_PASSWORD=$(generate_password)
-    REDIS_PASSWORD=$(generate_password)
-    MINIO_PASSWORD=$(generate_password)
-    JWT_SECRET=$(generate_password)$(generate_password)
-    
-    cat > .env.production << EOF
-# PostgreSQL
-POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-POSTGRES_DB=acadistra
-
-# Redis
-REDIS_PASSWORD=${REDIS_PASSWORD}
-
-# MinIO
-MINIO_ROOT_USER=minioadmin
-MINIO_ROOT_PASSWORD=${MINIO_PASSWORD}
-
-# JWT
-JWT_SECRET=${JWT_SECRET}
-
-# Multi-Tenant Setup
-# All schools share one database (acadistra)
-# Data is isolated by school_id column
-EOF
-    
-    echo -e "${GREEN}✓ .env.production created with secure passwords${NC}"
+# Check if .env exists
+if [ ! -f .env ]; then
+    echo -e "${RED}Error: .env file not found!${NC}"
+    echo -e "${YELLOW}Please create .env file with required configuration${NC}"
+    exit 1
 else
-    echo -e "${GREEN}✓ .env.production already exists${NC}"
+    echo -e "${GREEN}✓ .env already exists${NC}"
 fi
 
 # Check if Docker is installed

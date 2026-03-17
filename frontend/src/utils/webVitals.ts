@@ -8,59 +8,56 @@ interface WebVitalMetric {
   id: string
 }
 
+const sendToBackend = (metric: WebVitalMetric) => {
+  if (typeof window === 'undefined') return
+  
+  const token = localStorage.getItem('token')
+  if (!token) return
+
+  fetch('/api/v1/analytics/web-vitals', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(metric),
+    keepalive: true
+  }).catch(() => {})
+}
+
 export function initWebVitals() {
   if (typeof window === 'undefined') return
 
-  const sendToAnalytics = (metric: WebVitalMetric) => {
-    // Send to your analytics service
-    
-    // Example: Send to Google Analytics
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', metric.name, {
-        event_category: 'Web Vitals',
-        event_label: metric.id,
-        value: Math.round(metric.name === 'CLS' ? metric.value * 1000 : metric.value),
-        non_interaction: true,
-      })
-    }
-
-    // Example: Send to custom analytics endpoint
-    if (process.env.NODE_ENV === 'production') {
-      fetch('/api/analytics/web-vitals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(metric),
-      }).catch(console.error)
-    }
-  }
-
-  // Measure Core Web Vitals
-  getCLS(sendToAnalytics)
-  getFID(sendToAnalytics)
-  getFCP(sendToAnalytics)
-  getLCP(sendToAnalytics)
-  getTTFB(sendToAnalytics)
+  getCLS(sendToBackend)
+  getFID(sendToBackend)
+  getFCP(sendToBackend)
+  getLCP(sendToBackend)
+  getTTFB(sendToBackend)
 }
 
 export function trackCustomMetric(name: string, value: number, unit = 'ms') {
   if (typeof window === 'undefined') return
 
+  const token = localStorage.getItem('token')
+  if (!token) return
+
   const metric = {
     name: `custom_${name}`,
     value,
-    unit,
-    timestamp: Date.now(),
+    rating: 'good' as const,
+    delta: value,
+    id: `${name}_${Date.now()}`
   }
 
-
-  // Send to analytics
-  if (process.env.NODE_ENV === 'production') {
-    fetch('/api/analytics/custom-metrics', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(metric),
-    }).catch(console.error)
-  }
+  fetch('/api/v1/analytics/web-vitals', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(metric),
+    keepalive: true
+  }).catch(() => {})
 }
 
 // Performance monitoring hooks

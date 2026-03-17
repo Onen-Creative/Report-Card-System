@@ -153,6 +153,7 @@ func main() {
 	notificationHandler := handlers.NewNotificationHandler(db)
 	integrationActivityHandler := handlers.NewIntegrationActivityHandler(db)
 	analyticsHandler := handlers.NewAnalyticsHandler(db)
+	webVitalsHandler := handlers.NewWebVitalsHandler(db)
 	
 	// Initialize SMS and Email services
 	smsService := services.NewSMSService(
@@ -708,6 +709,11 @@ func main() {
 			protected.GET("/analytics/class-comparison", analyticsHandler.ClassComparison)
 			protected.GET("/analytics/subject-comparison", analyticsHandler.SubjectComparison)
 			protected.GET("/analytics/term-comparison", analyticsHandler.TermComparison)
+			
+			// Web vitals (optional auth)
+			protected.POST("/analytics/web-vitals", webVitalsHandler.RecordWebVital)
+			protected.GET("/analytics/web-vitals/stats", webVitalsHandler.GetWebVitalsStats)
+			
 			protected.GET("/subjects", subjectHandler.ListStandardSubjects)
 			protected.GET("/subjects/school", subjectHandler.GetSchoolSubjects)
 			protected.GET("/subjects/levels", subjectHandler.GetLevels)

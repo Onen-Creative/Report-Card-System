@@ -4,7 +4,6 @@ const nextConfig = {
   output: 'standalone',
   turbopack: {},
   
-  // PWA configuration
   async headers() {
     return [
       {
@@ -28,6 +27,15 @@ const nextConfig = {
             value: 'application/manifest+json',
           },
         ],
+      },
+    ]
+  },
+  
+  async rewrites() {
+    return [
+      {
+        source: '/stats',
+        destination: '/api/health',
       },
     ]
   },

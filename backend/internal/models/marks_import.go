@@ -26,7 +26,7 @@ type MarksImport struct {
 	ValidRows   int        `gorm:"not null" json:"valid_rows"`
 	InvalidRows int        `gorm:"not null" json:"invalid_rows"`
 	Errors      string     `gorm:"type:text" json:"errors"`
-	Data        string     `gorm:"type:longtext" json:"data"` // JSON array of marks
+	Data        string     `gorm:"type:text" json:"data"` // JSON array of marks
 	School      *School    `gorm:"foreignKey:SchoolID" json:"school,omitempty"`
 	Class       *Class     `gorm:"foreignKey:ClassID" json:"class,omitempty"`
 	Subject     *StandardSubject `gorm:"foreignKey:SubjectID" json:"subject,omitempty"`

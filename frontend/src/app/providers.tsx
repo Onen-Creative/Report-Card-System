@@ -77,7 +77,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const initializeApp = () => {
     startTransition(() => {
       // Initialize performance monitoring
-      if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+      if (typeof window !== 'undefined') {
         initWebVitals()
       }
       

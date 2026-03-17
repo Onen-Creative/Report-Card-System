@@ -11,7 +11,6 @@ services:
       POSTGRES_DB: acadistra
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
     ports:
       - "127.0.0.1:5432:5432"
     healthcheck:
@@ -68,11 +67,11 @@ services:
     restart: unless-stopped
     environment:
       - PORT=8080
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=acadistra
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=acadistra
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=acadistra
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_NAME=acadistra
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
@@ -80,7 +79,7 @@ services:
       - MINIO_ACCESS_KEY=${MINIO_ROOT_USER}
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
-      - ENVIRONMENT=production
+      - ENV=production
     depends_on:
       postgres:
         condition: service_healthy
