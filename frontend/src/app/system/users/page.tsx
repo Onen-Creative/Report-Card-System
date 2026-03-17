@@ -34,16 +34,16 @@ export default function SystemUsersPage() {
 
   const { data: users, isLoading } = useQuery({
     queryKey: ['system-users', searchTerm, roleFilter],
-    queryFn: () => api.get('/users', { params: { search: searchTerm, role: roleFilter } }).then(res => res.data),
+    queryFn: () => api.get('/api/v1/users', { params: { search: searchTerm, role: roleFilter } }).then(res => res.data),
   })
 
   const { data: schools } = useQuery({
     queryKey: ['schools'],
-    queryFn: () => api.get('/schools').then(res => res.data),
+    queryFn: () => api.get('/api/v1/schools').then(res => res.data),
   })
 
   const createMutation = useMutation({
-    mutationFn: (data: UserFormData) => api.post('/users', data),
+    mutationFn: (data: UserFormData) => api.post('/api/v1/users', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['system-users'] })
       setIsModalOpen(false)
@@ -53,7 +53,7 @@ export default function SystemUsersPage() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: UserFormData }) => 
-      api.put(`/users/${id}`, data),
+      api.put(`/api/v1/users/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['system-users'] })
       setIsModalOpen(false)
@@ -63,7 +63,7 @@ export default function SystemUsersPage() {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/users/${id}`),
+    mutationFn: (id: string) => api.delete(`/api/v1/users/${id}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['system-users'] }),
   })
 
