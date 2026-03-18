@@ -101,6 +101,18 @@ func Migrate(db *gorm.DB) error {
 		&models.PayrollPayment{},
 		&models.MarksImport{},
 		&models.IntegrationActivity{},
+		// Lesson Monitoring
+		&models.LessonRecord{},
+		// Budget & Requisitions
+		&models.Budget{},
+		&models.BudgetTransfer{},
+		&models.Requisition{},
+		&models.RequisitionItem{},
+		&models.RequisitionApprovalFlow{},
+		// Inventory
+		&models.InventoryCategory{},
+		&models.InventoryItem{},
+		&models.InventoryTransaction{},
 	)
 	if err != nil {
 		return err
