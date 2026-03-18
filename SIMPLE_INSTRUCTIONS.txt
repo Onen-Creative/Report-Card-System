@@ -1,0 +1,63 @@
+SIMPLE VPS MIGRATION INSTRUCTIONS
+==================================
+
+STEP 1: Connect to VPS
+-----------------------
+ssh user@185.208.207.16
+
+
+STEP 2: Go to project folder
+-----------------------------
+cd "/home/od/workspace/programming/school management system"
+
+
+STEP 3: Create the migration script
+------------------------------------
+nano migrate.sh
+
+(This will open a text editor)
+
+
+STEP 4: Copy the script
+------------------------
+On your LOCAL machine, open this file:
+/home/od/workspace/programming/school management system/migrate-standalone.sh
+
+Copy ALL the content (Ctrl+A, Ctrl+C)
+
+
+STEP 5: Paste into VPS
+-----------------------
+In the nano editor on VPS:
+- Right-click and paste (or Ctrl+Shift+V)
+- Press Ctrl+X to exit
+- Press Y to save
+- Press Enter to confirm
+
+
+STEP 6: Make it executable
+---------------------------
+chmod +x migrate.sh
+
+
+STEP 7: Run it
+--------------
+sudo ./migrate.sh
+
+Type: YES
+Wait: 5-10 minutes
+
+
+STEP 8: Test
+------------
+Open browser: https://acadistra.com
+Login: sysadmin@school.ug / Admin@123
+Check: Lessons, Budget, Requisitions, Inventory pages
+
+
+DONE!
+=====
+
+If it fails:
+- Check logs: docker logs acadistra_backend
+- Ask for help with the error message
